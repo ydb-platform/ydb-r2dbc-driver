@@ -1,0 +1,44 @@
+name: Build YDB R2DBC Driver
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - edited
+
+env:
+  MAVEN_ARGS: --batch-mode --update-snapshots -Dstyle.color=always
+
+jobs:
+  build:
+    name: Build YDB Examples
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        java: [ '17', '21' ]
+
+    env:
+      MAVEN_ARGS: --batch-mode --update-snapshots -Dstyle.color=always
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Download YDB R2DBC Driver dependencies
+        run: mvn $MAVEN_ARGS dependency:go-offline
+
+      - name: Build YDB R2DBC Driver
+        working-directory: ./liquibase-dialect
+        run: mvn $MAVEN_ARGS clean test
