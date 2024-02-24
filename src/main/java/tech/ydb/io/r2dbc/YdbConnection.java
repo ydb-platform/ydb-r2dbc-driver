@@ -23,24 +23,34 @@ import io.r2dbc.spi.IsolationLevel;
 import io.r2dbc.spi.Statement;
 import io.r2dbc.spi.TransactionDefinition;
 import io.r2dbc.spi.ValidationDepth;
+
 import java.time.Duration;
+
 import reactor.core.publisher.Mono;
-import tech.ydb.io.r2dbc.state.YDBConnectionState;
-import tech.ydb.table.TableClient;
+import tech.ydb.io.r2dbc.query.R2DBCQueryParser;
+import tech.ydb.io.r2dbc.query.YdbQuery;
+import tech.ydb.io.r2dbc.query.YdbQueryBuilder;
+import tech.ydb.io.r2dbc.state.YdbConnectionState;
+import tech.ydb.io.r2dbc.statement.YdbStatementFactory;
+import tech.ydb.io.r2dbc.type.YdbTypeResolver;
 
 /**
  * @author Kirill Kurdyukov
  */
-public class YDBConnection implements Connection {
-
-    private final TableClient tableClient;
+public class YdbConnection implements Connection {
+    private final YdbStatementFactory ydbStatementFactory;
+    private final YdbTypeResolver typeResolver;
 
     private volatile IsolationLevel isolationLevel = IsolationLevel.SERIALIZABLE;
     private volatile boolean autoCommit = true;
-    private volatile YDBConnectionState state;
+    private final YdbConnectionState state;
 
-    public YDBConnection(TableClient tableClient) {
-        this.tableClient = tableClient;
+    public YdbConnection(YdbStatementFactory ydbStatementFactory,
+                         YdbTypeResolver typeResolver,
+                         YdbConnectionState state) {
+        this.ydbStatementFactory = ydbStatementFactory;
+        this.typeResolver = typeResolver;
+        this.state = state;
     }
 
     @Override
@@ -66,7 +76,7 @@ public class YDBConnection implements Connection {
 
     @Override
     public Batch createBatch() {
-        return new YDBBatch(state);
+        return new YdbBatch(state);
     }
 
     @Override
@@ -76,7 +86,9 @@ public class YDBConnection implements Connection {
 
     @Override
     public Statement createStatement(String sql) {
-        return new YDBStatement(state, sql);
+        YdbQuery query = parseYdbQuery(sql);
+
+        return ydbStatementFactory.createStatement(query, state, typeResolver);
     }
 
     @Override
@@ -135,5 +147,11 @@ public class YDBConnection implements Connection {
     @Override
     public Mono<Boolean> validate(ValidationDepth depth) {
         return Mono.just(true);
+    }
+
+    private YdbQuery parseYdbQuery(String sql) {
+        YdbQueryBuilder builder = new YdbQueryBuilder(sql);
+        R2DBCQueryParser.buildQuery(builder);
+        return builder.build();
     }
 }

@@ -19,23 +19,24 @@ package tech.ydb.io.r2dbc.parameter;
 import io.r2dbc.spi.Parameter;
 import io.r2dbc.spi.R2dbcType;
 import java.util.HashMap;
-import tech.ydb.io.r2dbc.type.YDBType;
+
+import tech.ydb.io.r2dbc.type.YdbType;
 import tech.ydb.table.values.Value;
 
 /**
  * @author Kirill Kurdyukov
  */
-public class YDBParameterResolver {
+public class YdbParameterResolver {
 
-    private static final HashMap<Class<?>, YDBType> CLASS_YDB_TYPE = new HashMap<>();
+    private static final HashMap<Class<?>, YdbType> CLASS_YDB_TYPE = new HashMap<>();
 
     static {
-        for (YDBType value : YDBType.values()) {
+        for (YdbType value : YdbType.values()) {
             CLASS_YDB_TYPE.put(value.getJavaType(), value);
         }
     }
 
-    private YDBParameterResolver() {
+    private YdbParameterResolver() {
     }
 
     public static Value<?> resolve(Object param) {
@@ -55,8 +56,8 @@ public class YDBParameterResolver {
 
     private static Value<?> resolveParameter(Parameter parameter, Object param) {
         if (parameter.getType() instanceof R2dbcType r2dbcType) {
-            return YDBType.valueOf(r2dbcType).createValue(param);
-        } else if (parameter.getType() instanceof YDBType ydbType) {
+            return YdbType.valueOf(r2dbcType).createValue(param);
+        } else if (parameter.getType() instanceof YdbType ydbType) {
             return ydbType.createValue(param);
         }
 

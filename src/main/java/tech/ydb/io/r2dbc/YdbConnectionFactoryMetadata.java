@@ -14,17 +14,27 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc.state;
+package tech.ydb.io.r2dbc;
 
-import java.util.concurrent.CompletableFuture;
-import tech.ydb.core.Result;
-import tech.ydb.table.query.DataQueryResult;
-import tech.ydb.table.query.Params;
+import io.r2dbc.spi.ConnectionFactoryMetadata;
 
 /**
  * @author Kirill Kurdyukov
  */
-public sealed interface YDBConnectionState permits Close, InTransaction, OutTransaction {
+public final class YdbConnectionFactoryMetadata implements ConnectionFactoryMetadata {
 
-    CompletableFuture<Result<DataQueryResult>> executeDataQuery(String yql, Params params);
+    /**
+     * The name of the YDB product.
+     */
+    public static final String NAME = "YDB";
+
+    static final ConnectionFactoryMetadata INSTANCE = new YdbConnectionFactoryMetadata();
+
+    private YdbConnectionFactoryMetadata() {
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
 }

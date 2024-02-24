@@ -17,22 +17,22 @@
 package tech.ydb.io.r2dbc;
 
 import io.r2dbc.spi.ColumnMetadata;
-import tech.ydb.io.r2dbc.type.YDBType;
+import tech.ydb.io.r2dbc.type.YdbType;
 
 /**
  * @author Kirill Kurdyukov
  */
 public class YDBColumnMetadata implements ColumnMetadata {
-    private final YDBType ydbType;
+    private final YdbType ydbType;
     private final String name;
 
-    public YDBColumnMetadata(YDBType ydbType, String name) {
+    public YDBColumnMetadata(YdbType ydbType, String name) {
         this.ydbType = ydbType;
         this.name = name;
     }
 
     @Override
-    public YDBType getType() {
+    public YdbType getType() {
         return ydbType;
     }
 

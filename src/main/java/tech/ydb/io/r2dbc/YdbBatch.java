@@ -16,34 +16,36 @@
 
 package tech.ydb.io.r2dbc;
 
-import io.r2dbc.spi.Row;
-import io.r2dbc.spi.RowMetadata;
-import tech.ydb.table.result.ResultSetReader;
+import io.r2dbc.spi.Batch;
+import io.r2dbc.spi.Result;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Mono;
+import tech.ydb.io.r2dbc.state.YdbConnectionState;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Kirill Kurdyukov
  */
-public final class YDBRow implements Row {
-    private final ResultSetReader resultSetReader;
+public final class YdbBatch implements Batch {
 
-    public YDBRow(ResultSetReader resultSetReader) {
-        this.resultSetReader = resultSetReader;
+    private final YdbConnectionState state;
+    private final List<String> statements = new ArrayList<>();
+
+    public YdbBatch(YdbConnectionState state) {
+        this.state = state;
     }
 
     @Override
-    public RowMetadata getMetadata() {
-        return new YDBRowMetadata(resultSetReader);
+    public Batch add(String sql) {
+        statements.add(sql);
+
+        return this;
     }
 
     @Override
-    public <T> T get(int index, Class<T> type) {
-        resultSetReader.getColumn(index).getType();
-        
-        return null;
-    }
-
-    @Override
-    public <T> T get(String name, Class<T> type) {
-        return null;
+    public Publisher<? extends Result> execute() {
+        return Mono.empty();
     }
 }

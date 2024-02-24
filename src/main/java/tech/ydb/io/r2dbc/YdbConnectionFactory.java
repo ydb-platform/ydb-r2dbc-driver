@@ -16,25 +16,30 @@
 
 package tech.ydb.io.r2dbc;
 
+import io.r2dbc.spi.Connection;
+import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryMetadata;
+import reactor.core.publisher.Mono;
+import tech.ydb.table.TableClient;
 
 /**
  * @author Kirill Kurdyukov
  */
-public final class YDBConnectionFactoryMetadata implements ConnectionFactoryMetadata {
+public final class YdbConnectionFactory implements ConnectionFactory {
 
-    /**
-     * The name of the YDB product.
-     */
-    public static final String NAME = "YDB";
+    private final TableClient tableClient;
 
-    static final ConnectionFactoryMetadata INSTANCE = new YDBConnectionFactoryMetadata();
-
-    private YDBConnectionFactoryMetadata() {
+    public YdbConnectionFactory(TableClient tableClient) {
+        this.tableClient = tableClient;
     }
 
     @Override
-    public String getName() {
-        return NAME;
+    public Mono<? extends Connection> create() {
+        return Mono.empty();
+    }
+
+    @Override
+    public ConnectionFactoryMetadata getMetadata() {
+        return YdbConnectionFactoryMetadata.INSTANCE;
     }
 }

@@ -14,37 +14,36 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc;
+package tech.ydb.io.r2dbc.result;
 
-import io.r2dbc.spi.Batch;
-import io.r2dbc.spi.Result;
-import org.reactivestreams.Publisher;
-import tech.ydb.io.r2dbc.state.YDBConnectionState;
-
-import java.util.ArrayList;
-import java.util.List;
+import io.r2dbc.spi.Row;
+import io.r2dbc.spi.RowMetadata;
+import tech.ydb.table.result.ResultSetReader;
 
 /**
  * @author Kirill Kurdyukov
  */
-public final class YDBBatch implements Batch {
+public final class YdbRow implements Row {
+    private final ResultSetReader resultSetReader;
 
-    private final YDBConnectionState state;
-    private final List<String> statements = new ArrayList<>();
-
-    public YDBBatch(YDBConnectionState state) {
-        this.state = state;
+    public YdbRow(ResultSetReader resultSetReader) {
+        this.resultSetReader = resultSetReader;
     }
 
     @Override
-    public Batch add(String sql) {
-        statements.add(sql);
-
-        return this;
+    public RowMetadata getMetadata() {
+        return new YdbRowMetadata(resultSetReader);
     }
 
     @Override
-    public Publisher<? extends Result> execute() {
-        return new YDBStatement(state, String.join(";", statements)).execute();
+    public <T> T get(int index, Class<T> type) {
+        resultSetReader.getColumn(index).getType();
+        
+        return null;
+    }
+
+    @Override
+    public <T> T get(String name, Class<T> type) {
+        return null;
     }
 }

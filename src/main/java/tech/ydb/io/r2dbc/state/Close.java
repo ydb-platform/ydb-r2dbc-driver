@@ -16,19 +16,24 @@
 
 package tech.ydb.io.r2dbc.state;
 
-import java.util.concurrent.CompletableFuture;
-import tech.ydb.core.Result;
-import tech.ydb.table.query.DataQueryResult;
+import reactor.core.publisher.Mono;
+import tech.ydb.io.r2dbc.result.YdbDataResult;
+import tech.ydb.io.r2dbc.result.YdbStatusResult;
 import tech.ydb.table.query.Params;
 
 /**
  * @author Kirill Kurdyukov
  */
-final class Close implements YDBConnectionState {
+final class Close implements YdbConnectionState {
     static final Close INSTANCE = new Close();
 
     @Override
-    public CompletableFuture<Result<DataQueryResult>> executeDataQuery(String yql, Params params) {
-        throw new IllegalStateException("Connection is closed");
+    public Mono<YdbDataResult> executeDataQuery(String yql, Params params) {
+        return Mono.error(new IllegalStateException("Connection is closed"));
+    }
+
+    @Override
+    public Mono<YdbStatusResult> executeSchemaQuery(String yql, Params params) {
+        return Mono.error(new IllegalStateException("Connection is closed"));
     }
 }
