@@ -14,34 +14,14 @@ import tech.ydb.table.values.Value;
  * @author kuleshovegor
  */
 public class YdbQuery {
-    private final String originSQL;
     private final String yqlQuery;
     private final QueryType type;
     private final List<String> indexesArgsNames;
-    private final List<YdbExpression> expressions;
 
-    YdbQuery(YdbQueryBuilder builder) {
-        this.originSQL = builder.getOriginSQL();
-        this.yqlQuery = builder.buildYQL();
-        this.indexesArgsNames = builder.getIndexedArgs();
-        this.type = builder.getQueryType();
-        this.expressions = builder.getExpressions();
-    }
-
-    public String originSQL() {
-        return originSQL;
-    }
-
-    public List<YdbExpression> getExpressions() {
-        return expressions;
-    }
-
-    public boolean hasIndexesParameters() {
-        return indexesArgsNames != null && !indexesArgsNames.isEmpty();
-    }
-
-    public List<String> getIndexesParameters() {
-        return indexesArgsNames;
+    YdbQuery(String yql, List<String> indexesArgsNames, QueryType queryType) {
+        this.yqlQuery = yql;
+        this.indexesArgsNames = indexesArgsNames;
+        this.type = queryType;
     }
 
     public String getYqlQuery(Params params) throws SQLException {
@@ -50,8 +30,7 @@ public class YdbQuery {
         if (indexesArgsNames != null) {
             if (params != null) {
                 Map<String, Value<?>> values = params.values();
-                for (int idx = 0; idx < indexesArgsNames.size(); idx += 1) {
-                    String prm = indexesArgsNames.get(idx);
+                for (String prm : indexesArgsNames) {
                     if (!values.containsKey(prm)) {
                         throw new SQLDataException(YdbConst.MISSING_VALUE_FOR_PARAMETER + prm);
                     }

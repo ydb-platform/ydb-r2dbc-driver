@@ -14,9 +14,7 @@ public class BindingsImpl implements Bindings {
     }
 
     @Override
-    public void add(Binding binding) {
-
-    }
+    public void add(Binding binding) {}
 
     @Override
     public Iterator<Binding> iterator() {
