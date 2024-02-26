@@ -22,11 +22,11 @@ import tech.ydb.io.r2dbc.type.YdbType;
 /**
  * @author Kirill Kurdyukov
  */
-public class YDBColumnMetadata implements ColumnMetadata {
+public class YdbColumnMetadata implements ColumnMetadata {
     private final YdbType ydbType;
     private final String name;
 
-    public YDBColumnMetadata(YdbType ydbType, String name) {
+    public YdbColumnMetadata(YdbType ydbType, String name) {
         this.ydbType = ydbType;
         this.name = name;
     }
