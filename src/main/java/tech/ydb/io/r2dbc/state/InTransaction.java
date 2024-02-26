@@ -17,8 +17,8 @@
 package tech.ydb.io.r2dbc.state;
 
 import reactor.core.publisher.Mono;
-import tech.ydb.io.r2dbc.result.YdbDataResult;
-import tech.ydb.io.r2dbc.result.YdbStatusResult;
+import tech.ydb.io.r2dbc.result.YdbDDLResult;
+import tech.ydb.io.r2dbc.result.YdbDMLResult;
 import tech.ydb.table.Session;
 import tech.ydb.table.query.Params;
 import tech.ydb.table.transaction.TxControl;
@@ -39,13 +39,13 @@ final class InTransaction implements YdbConnectionState {
     }
 
     @Override
-    public Mono<YdbDataResult> executeDataQuery(String yql, Params params) {
+    public Mono<YdbDDLResult> executeDataQuery(String yql, Params params) {
         return Mono.fromFuture(session.executeDataQuery(yql, TxControl.id(transactionId), params))
-                .map(dataQueryResultResult -> new YdbDataResult(dataQueryResultResult.getValue()));
+                .map(dataQueryResultResult -> new YdbDDLResult(dataQueryResultResult.getValue()));
     }
 
     @Override
-    public Mono<YdbStatusResult> executeSchemaQuery(String yql, Params params) {
+    public Mono<YdbDMLResult> executeSchemaQuery(String yql, Params params) {
         return Mono.error(new IllegalStateException(SCHEME_QUERY_INSIDE_TRANSACTION));
     }
 }
