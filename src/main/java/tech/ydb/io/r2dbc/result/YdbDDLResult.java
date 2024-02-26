@@ -24,13 +24,16 @@ import io.r2dbc.spi.Result;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import org.reactivestreams.Publisher;
-import tech.ydb.table.query.DataQueryResult;
+import tech.ydb.core.Status;
 
+/**
+ * @author Egor Kuleshov
+ */
 public class YdbDDLResult implements Result {
-    private final DataQueryResult dataQueryResult;
+    private final Status status;
 
-    public YdbDDLResult(DataQueryResult dataQueryResult) {
-        this.dataQueryResult = dataQueryResult;
+    public YdbDDLResult(Status status) {
+        this.status = status;
     }
 
     @Override

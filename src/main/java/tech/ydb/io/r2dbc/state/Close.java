@@ -17,8 +17,8 @@
 package tech.ydb.io.r2dbc.state;
 
 import reactor.core.publisher.Mono;
-import tech.ydb.io.r2dbc.result.YdbDDLResult;
 import tech.ydb.io.r2dbc.result.YdbDMLResult;
+import tech.ydb.io.r2dbc.result.YdbDDLResult;
 import tech.ydb.table.query.Params;
 
 /**
@@ -28,12 +28,12 @@ final class Close implements YdbConnectionState {
     static final Close INSTANCE = new Close();
 
     @Override
-    public Mono<YdbDDLResult> executeDataQuery(String yql, Params params) {
+    public Mono<YdbDMLResult> executeDataQuery(String yql, Params params) {
         return Mono.error(new IllegalStateException("Connection is closed"));
     }
 
     @Override
-    public Mono<YdbDMLResult> executeSchemaQuery(String yql, Params params) {
+    public Mono<YdbDDLResult> executeSchemaQuery(String yql, Params params) {
         return Mono.error(new IllegalStateException("Connection is closed"));
     }
 }

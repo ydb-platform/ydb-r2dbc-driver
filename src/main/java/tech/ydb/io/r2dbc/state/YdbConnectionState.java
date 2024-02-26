@@ -17,8 +17,8 @@
 package tech.ydb.io.r2dbc.state;
 
 import reactor.core.publisher.Mono;
-import tech.ydb.io.r2dbc.result.YdbDDLResult;
 import tech.ydb.io.r2dbc.result.YdbDMLResult;
+import tech.ydb.io.r2dbc.result.YdbDDLResult;
 import tech.ydb.table.query.Params;
 
 /**
@@ -26,7 +26,7 @@ import tech.ydb.table.query.Params;
  */
 public sealed interface YdbConnectionState permits Close, InTransaction, OutTransaction {
 
-    Mono<YdbDDLResult> executeDataQuery(String yql, Params params);
+    Mono<YdbDMLResult> executeDataQuery(String yql, Params params);
 
-    Mono<YdbDMLResult> executeSchemaQuery(String yql, Params params);
+    Mono<YdbDDLResult> executeSchemaQuery(String yql, Params params);
 }

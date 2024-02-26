@@ -30,8 +30,8 @@ import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.query.R2dbcQueryParser;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
-import tech.ydb.io.r2dbc.statement.DDLYdbStatement;
 import tech.ydb.io.r2dbc.statement.DMLYdbStatement;
+import tech.ydb.io.r2dbc.statement.DDLYdbStatement;
 import tech.ydb.io.r2dbc.type.YdbTypeResolver;
 
 /**
@@ -85,8 +85,8 @@ public class YdbConnection implements Connection {
         YdbQuery query =  R2dbcQueryParser.parseYdbQuery(sql);
 
         return switch (query.type()) {
-            case DDL -> new DDLYdbStatement(query, state);
             case DML -> new DMLYdbStatement(query, state);
+            case DDL -> new DDLYdbStatement(query, state);
         };
     }
 
