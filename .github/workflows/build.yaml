@@ -40,5 +40,4 @@ jobs:
         run: mvn $MAVEN_ARGS dependency:go-offline
 
       - name: Build YDB R2DBC Driver
-        working-directory: ./liquibase-dialect
         run: mvn $MAVEN_ARGS clean test
