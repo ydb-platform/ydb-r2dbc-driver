@@ -19,8 +19,8 @@ package tech.ydb.io.r2dbc.query;
 /**
  * @author Egor Kuleshov
  */
-public class R2dbcQueryParser {
-    public static YdbQuery parseYdbQuery(String sql) {
+public class YdbSqlParser {
+    public static YdbQuery parse(String sql) {
         return null;
     }
 }

@@ -27,11 +27,11 @@ import io.r2dbc.spi.ValidationDepth;
 import java.time.Duration;
 
 import reactor.core.publisher.Mono;
-import tech.ydb.io.r2dbc.query.R2dbcQueryParser;
+import tech.ydb.io.r2dbc.query.YdbSqlParser;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
-import tech.ydb.io.r2dbc.statement.DMLYdbStatement;
-import tech.ydb.io.r2dbc.statement.DDLYdbStatement;
+import tech.ydb.io.r2dbc.statement.YdbDMLStatement;
+import tech.ydb.io.r2dbc.statement.YdbDDLStatement;
 import tech.ydb.io.r2dbc.type.YdbTypeResolver;
 
 /**
@@ -82,11 +82,11 @@ public class YdbConnection implements Connection {
 
     @Override
     public Statement createStatement(String sql) {
-        YdbQuery query =  R2dbcQueryParser.parseYdbQuery(sql);
+        YdbQuery query =  YdbSqlParser.parse(sql);
 
         return switch (query.type()) {
-            case DML -> new DMLYdbStatement(query, state);
-            case DDL -> new DDLYdbStatement(query, state);
+            case DML -> new YdbDMLStatement(query, state);
+            case DDL -> new YdbDDLStatement(query, state);
         };
     }
 
