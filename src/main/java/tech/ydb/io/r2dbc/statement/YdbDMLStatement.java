@@ -56,18 +56,14 @@ public class YdbDMLStatement extends YdbStatement {
 
     @Override
     public Publisher<? extends Result> execute() {
-        try {
-            return Flux.fromIterable(bindings)
-                    .flatMap(binding -> {
-                        try {
-                            return connectionState.executeDataQuery(query.getYqlQuery(bindings.getCurrent()),
-                                            bindings.getCurrent());
-                        } catch (SQLException e) {
-                            return Mono.error(e);
-                        }
-                    });
-        } catch (Exception e) {
-            return Mono.error(e);
-        }
+        return Flux.fromIterable(bindings)
+                .flatMap(binding -> {
+                    try {
+                        return connectionState.executeDataQuery(query.getYqlQuery(bindings.getCurrent()),
+                                bindings.getCurrent());
+                    } catch (SQLException e) {
+                        return Mono.error(e);
+                    }
+                });
     }
 }

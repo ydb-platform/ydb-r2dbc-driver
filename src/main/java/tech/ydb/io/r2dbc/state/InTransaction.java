@@ -45,7 +45,7 @@ final class InTransaction implements YdbConnectionState {
     }
 
     @Override
-    public Mono<YdbDDLResult> executeSchemaQuery(String yql, Params params) {
+    public Mono<YdbDDLResult> executeSchemaQuery(String yql) {
         return Mono.error(new IllegalStateException(SCHEME_QUERY_INSIDE_TRANSACTION));
     }
 }

@@ -24,6 +24,8 @@
         <r2dbc-spi.version>1.0.0.RELEASE</r2dbc-spi.version>
         <reactor.version>2022.0.16</reactor.version>
         <ydb.java.version>2.1.11</ydb.java.version>
+        <mockito.version>5.10.0</mockito.version>
+        <junit.version>5.10.1</junit.version>
     </properties>
 
     <dependencyManagement>
@@ -58,6 +60,22 @@
         <dependency>
             <groupId>tech.ydb</groupId>
             <artifactId>ydb-sdk-table</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>tech.ydb.test</groupId>
+            <artifactId>ydb-junit5-support</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

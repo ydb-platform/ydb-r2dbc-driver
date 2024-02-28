@@ -16,50 +16,50 @@
 
 package tech.ydb.io.r2dbc.statement;
 
-
-import io.r2dbc.spi.Result;
 import io.r2dbc.spi.Statement;
-import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.query.YdbQuery;
+import tech.ydb.io.r2dbc.result.YdbDDLResult;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
 
 /**
  * @author Egor Kuleshov
  */
 public class YdbDDLStatement extends YdbStatement {
+    private static final String NOT_SUPPORTED_MESSAGE = "Operation not supported for YdbDDLStatement";
+
     public YdbDDLStatement(YdbQuery query, YdbConnectionState ydbConnectionState) {
         super(query, ydbConnectionState);
     }
     @Override
     public Statement add() {
-        return this;
+        throw new UnsupportedOperationException(NOT_SUPPORTED_MESSAGE);
     }
 
     @Override
     public Statement bind(int i, Object o) {
-        return this;
+        throw new UnsupportedOperationException(NOT_SUPPORTED_MESSAGE);
     }
 
     @Override
     public Statement bind(String s, Object o) {
-        return this;
+        throw new UnsupportedOperationException(NOT_SUPPORTED_MESSAGE);
     }
 
     @Override
     public Statement bindNull(int i, Class<?> aClass) {
-        return this;
+        throw new UnsupportedOperationException(NOT_SUPPORTED_MESSAGE);
     }
 
     @Override
     public Statement bindNull(String s, Class<?> aClass) {
-        return this;
+        throw new UnsupportedOperationException(NOT_SUPPORTED_MESSAGE);
     }
 
     @Override
-    public Publisher<? extends Result> execute() {
+    public Mono<YdbDDLResult> execute() {
         try {
-            return connectionState.executeSchemaQuery(query.getYqlQuery(bindings.getCurrent()), bindings.getCurrent());
+            return connectionState.executeSchemaQuery(query.getYqlQuery(bindings.getCurrent()));
         } catch (Exception e) {
             return Mono.error(e);
         }

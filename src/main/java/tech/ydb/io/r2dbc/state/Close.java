@@ -33,7 +33,7 @@ final class Close implements YdbConnectionState {
     }
 
     @Override
-    public Mono<YdbDDLResult> executeSchemaQuery(String yql, Params params) {
+    public Mono<YdbDDLResult> executeSchemaQuery(String yql) {
         return Mono.error(new IllegalStateException("Connection is closed"));
     }
 }

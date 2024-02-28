@@ -50,7 +50,7 @@ final class OutTransaction implements YdbConnectionState {
     }
 
     @Override
-    public Mono<YdbDDLResult> executeSchemaQuery(String yql, Params params) {
+    public Mono<YdbDDLResult> executeSchemaQuery(String yql) {
         return Mono.fromFuture(tableClient.createSession(connectionTimeout))
                 .map(sessionResult -> ResultExtractor.extract(sessionResult, "Error creating session"))
                 .flatMap(session -> Mono.fromFuture(session.executeSchemeQuery(yql))).map(YdbDDLResult::new);

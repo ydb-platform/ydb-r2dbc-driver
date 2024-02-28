@@ -24,9 +24,9 @@ import tech.ydb.table.query.Params;
 /**
  * @author Kirill Kurdyukov
  */
-public sealed interface YdbConnectionState permits Close, InTransaction, OutTransaction {
+public interface YdbConnectionState {
 
     Mono<YdbDMLResult> executeDataQuery(String yql, Params params);
 
-    Mono<YdbDDLResult> executeSchemaQuery(String yql, Params params);
+    Mono<YdbDDLResult> executeSchemaQuery(String yql);
 }

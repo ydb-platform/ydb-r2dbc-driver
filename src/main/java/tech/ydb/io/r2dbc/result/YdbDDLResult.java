@@ -55,4 +55,8 @@ public class YdbDDLResult implements Result {
     public <T> Publisher<T> flatMap(Function<Segment, ? extends Publisher<? extends T>> function) {
         return null;
     }
+
+    public Status getStatus() {
+        return status;
+    }
 }
