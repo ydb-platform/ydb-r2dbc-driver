@@ -32,20 +32,16 @@ import tech.ydb.io.r2dbc.query.YdbQuery;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
 import tech.ydb.io.r2dbc.statement.YdbDMLStatement;
 import tech.ydb.io.r2dbc.statement.YdbDDLStatement;
-import tech.ydb.io.r2dbc.type.YdbTypeResolver;
 
 /**
  * @author Kirill Kurdyukov
  */
 public class YdbConnection implements Connection {
-    private final YdbTypeResolver typeResolver;
-
     private volatile IsolationLevel isolationLevel = IsolationLevel.SERIALIZABLE;
     private volatile boolean autoCommit = true;
     private volatile YdbConnectionState state;
 
-    public YdbConnection(YdbTypeResolver typeResolver, YdbConnectionState state) {
-        this.typeResolver = typeResolver;
+    public YdbConnection(YdbConnectionState state) {
         this.state = state;
     }
 

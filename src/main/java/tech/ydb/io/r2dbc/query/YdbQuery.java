@@ -42,7 +42,7 @@ public class YdbQuery {
     public String getYqlQuery(Params params) throws SQLException {
         StringBuilder yql = new StringBuilder();
 
-        if (indexesArgsNames != null) {
+        if (!indexesArgsNames.isEmpty()) {
             if (params != null) {
                 Map<String, Value<?>> values = params.values();
                 for (String prm : indexesArgsNames) {
