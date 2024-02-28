@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc;
+package tech.ydb.io.r2dbc.result;
 
 import io.r2dbc.spi.Result;
 import io.r2dbc.spi.Row;
@@ -32,11 +32,11 @@ import tech.ydb.table.query.DataQueryResult;
 /**
  * @author Kirill Kurdyukov
  */
-public final class YDBResult implements Result {
+public final class YdbResult implements Result {
 
     private final DataQueryResult dataQueryResult;
 
-    public YDBResult(tech.ydb.core.Result<DataQueryResult> dataQueryResult) {
+    public YdbResult(tech.ydb.core.Result<DataQueryResult> dataQueryResult) {
         if (dataQueryResult.isSuccess()) {
             this.dataQueryResult = dataQueryResult.getValue();
         } else {
@@ -45,8 +45,8 @@ public final class YDBResult implements Result {
     }
 
     @Override
-    public Publisher<Integer> getRowsUpdated() {
-        return Mono.just(0); // Count rows updated is unsupported :(
+    public Publisher<Long> getRowsUpdated() {
+        return Mono.just(0L); // Count rows updated is unsupported :(
     }
 
     @Override
@@ -56,7 +56,7 @@ public final class YDBResult implements Result {
         for (int i = 0; i < dataQueryResult.getResultSetCount(); i++) {
             var currentResultSet = dataQueryResult.getResultSet(i);
 
-            resultRows.add(mappingFunction.apply(new YDBRow(currentResultSet), new YDBRowMetadata(currentResultSet)));
+            resultRows.add(mappingFunction.apply(new YdbRow(currentResultSet), new YdbRowMetadata(currentResultSet)));
         }
 
         return Flux.fromIterable(resultRows);

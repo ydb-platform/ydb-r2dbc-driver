@@ -16,30 +16,36 @@
 
 package tech.ydb.io.r2dbc;
 
-import io.r2dbc.spi.Connection;
-import io.r2dbc.spi.ConnectionFactory;
-import io.r2dbc.spi.ConnectionFactoryMetadata;
+import io.r2dbc.spi.Batch;
+import io.r2dbc.spi.Result;
+import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
-import tech.ydb.table.TableClient;
+import tech.ydb.io.r2dbc.state.YdbConnectionState;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Kirill Kurdyukov
  */
-public final class YDBConnectionFactory implements ConnectionFactory {
+public final class YdbBatch implements Batch {
 
-    private final TableClient tableClient;
+    private final YdbConnectionState state;
+    private final List<String> statements = new ArrayList<>();
 
-    public YDBConnectionFactory(TableClient tableClient) {
-        this.tableClient = tableClient;
+    public YdbBatch(YdbConnectionState state) {
+        this.state = state;
     }
 
     @Override
-    public Mono<? extends Connection> create() {
-        return Mono.just(new YDBConnection(tableClient));
+    public Batch add(String sql) {
+        statements.add(sql);
+
+        return this;
     }
 
     @Override
-    public ConnectionFactoryMetadata getMetadata() {
-        return YDBConnectionFactoryMetadata.INSTANCE;
+    public Publisher<? extends Result> execute() {
+        return Mono.empty();
     }
 }

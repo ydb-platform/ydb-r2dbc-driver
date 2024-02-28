@@ -14,17 +14,30 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc.state;
+package tech.ydb.io.r2dbc;
 
-import java.util.concurrent.CompletableFuture;
-import tech.ydb.core.Result;
-import tech.ydb.table.query.DataQueryResult;
-import tech.ydb.table.query.Params;
+import io.r2dbc.spi.ColumnMetadata;
+import tech.ydb.io.r2dbc.type.YdbType;
 
 /**
  * @author Kirill Kurdyukov
  */
-public sealed interface YDBConnectionState permits Close, InTransaction, OutTransaction {
+public class YdbColumnMetadata implements ColumnMetadata {
+    private final YdbType ydbType;
+    private final String name;
 
-    CompletableFuture<Result<DataQueryResult>> executeDataQuery(String yql, Params params);
+    public YdbColumnMetadata(YdbType ydbType, String name) {
+        this.ydbType = ydbType;
+        this.name = name;
+    }
+
+    @Override
+    public YdbType getType() {
+        return ydbType;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
 }

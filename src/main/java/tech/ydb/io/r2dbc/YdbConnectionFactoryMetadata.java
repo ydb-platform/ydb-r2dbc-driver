@@ -14,26 +14,27 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc.state;
+package tech.ydb.io.r2dbc;
 
-import reactor.core.publisher.Mono;
-import tech.ydb.io.r2dbc.result.YdbDMLResult;
-import tech.ydb.io.r2dbc.result.YdbDDLResult;
-import tech.ydb.table.query.Params;
+import io.r2dbc.spi.ConnectionFactoryMetadata;
 
 /**
  * @author Kirill Kurdyukov
  */
-final class Close implements YdbConnectionState {
-    static final Close INSTANCE = new Close();
+public final class YdbConnectionFactoryMetadata implements ConnectionFactoryMetadata {
 
-    @Override
-    public Mono<YdbDMLResult> executeDataQuery(String yql, Params params) {
-        return Mono.error(new IllegalStateException("Connection is closed"));
+    /**
+     * The name of the YDB product.
+     */
+    public static final String NAME = "YDB";
+
+    static final ConnectionFactoryMetadata INSTANCE = new YdbConnectionFactoryMetadata();
+
+    private YdbConnectionFactoryMetadata() {
     }
 
     @Override
-    public Mono<YdbDDLResult> executeSchemaQuery(String yql) {
-        return Mono.error(new IllegalStateException("Connection is closed"));
+    public String getName() {
+        return NAME;
     }
 }

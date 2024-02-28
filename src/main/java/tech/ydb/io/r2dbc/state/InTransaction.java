@@ -16,17 +16,19 @@
 
 package tech.ydb.io.r2dbc.state;
 
-import java.util.concurrent.CompletableFuture;
-import tech.ydb.core.Result;
+import reactor.core.publisher.Mono;
+import tech.ydb.io.r2dbc.result.YdbDMLResult;
+import tech.ydb.io.r2dbc.result.YdbDDLResult;
 import tech.ydb.table.Session;
-import tech.ydb.table.query.DataQueryResult;
 import tech.ydb.table.query.Params;
 import tech.ydb.table.transaction.TxControl;
 
 /**
  * @author Kirill Kurdyukov
  */
-final class InTransaction implements YDBConnectionState {
+final class InTransaction implements YdbConnectionState {
+    public static final String SCHEME_QUERY_INSIDE_TRANSACTION = "Scheme query cannot be executed inside active "
+            + "transaction. This behavior may be changed by property schemeQueryTxMode";
 
     private final Session session;
     private final String transactionId;
@@ -37,7 +39,13 @@ final class InTransaction implements YDBConnectionState {
     }
 
     @Override
-    public CompletableFuture<Result<DataQueryResult>> executeDataQuery(String yql, Params params) {
-        return session.executeDataQuery(yql, TxControl.id(transactionId), params);
+    public Mono<YdbDMLResult> executeDataQuery(String yql, Params params) {
+        return Mono.fromFuture(session.executeDataQuery(yql, TxControl.id(transactionId), params))
+                .map(dataQueryResultResult -> new YdbDMLResult(dataQueryResultResult.getValue()));
+    }
+
+    @Override
+    public Mono<YdbDDLResult> executeSchemaQuery(String yql) {
+        return Mono.error(new IllegalStateException(SCHEME_QUERY_INSIDE_TRANSACTION));
     }
 }

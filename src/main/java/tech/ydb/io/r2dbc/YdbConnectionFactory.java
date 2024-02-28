@@ -16,34 +16,30 @@
 
 package tech.ydb.io.r2dbc;
 
-import io.r2dbc.spi.Row;
-import io.r2dbc.spi.RowMetadata;
-import tech.ydb.table.result.ResultSetReader;
+import io.r2dbc.spi.Connection;
+import io.r2dbc.spi.ConnectionFactory;
+import io.r2dbc.spi.ConnectionFactoryMetadata;
+import reactor.core.publisher.Mono;
+import tech.ydb.table.TableClient;
 
 /**
  * @author Kirill Kurdyukov
  */
-public final class YDBRow implements Row {
-    private final ResultSetReader resultSetReader;
+public final class YdbConnectionFactory implements ConnectionFactory {
 
-    public YDBRow(ResultSetReader resultSetReader) {
-        this.resultSetReader = resultSetReader;
+    private final TableClient tableClient;
+
+    public YdbConnectionFactory(TableClient tableClient) {
+        this.tableClient = tableClient;
     }
 
     @Override
-    public RowMetadata getMetadata() {
-        return new YDBRowMetadata(resultSetReader);
+    public Mono<? extends Connection> create() {
+        return Mono.empty();
     }
 
     @Override
-    public <T> T get(int index, Class<T> type) {
-        resultSetReader.getColumn(index).getType();
-        
-        return null;
-    }
-
-    @Override
-    public <T> T get(String name, Class<T> type) {
-        return null;
+    public ConnectionFactoryMetadata getMetadata() {
+        return YdbConnectionFactoryMetadata.INSTANCE;
     }
 }

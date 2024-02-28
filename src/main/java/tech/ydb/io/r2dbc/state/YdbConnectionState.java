@@ -14,11 +14,19 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc.query;
+package tech.ydb.io.r2dbc.state;
+
+import reactor.core.publisher.Mono;
+import tech.ydb.io.r2dbc.result.YdbDMLResult;
+import tech.ydb.io.r2dbc.result.YdbDDLResult;
+import tech.ydb.table.query.Params;
 
 /**
  * @author Kirill Kurdyukov
  */
-public class YDBQuery {
+public interface YdbConnectionState {
 
+    Mono<YdbDMLResult> executeDataQuery(String yql, Params params);
+
+    Mono<YdbDDLResult> executeSchemaQuery(String yql);
 }

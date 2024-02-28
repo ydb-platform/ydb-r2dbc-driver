@@ -23,24 +23,26 @@ import io.r2dbc.spi.IsolationLevel;
 import io.r2dbc.spi.Statement;
 import io.r2dbc.spi.TransactionDefinition;
 import io.r2dbc.spi.ValidationDepth;
+
 import java.time.Duration;
+
 import reactor.core.publisher.Mono;
-import tech.ydb.io.r2dbc.state.YDBConnectionState;
-import tech.ydb.table.TableClient;
+import tech.ydb.io.r2dbc.query.YdbSqlParser;
+import tech.ydb.io.r2dbc.query.YdbQuery;
+import tech.ydb.io.r2dbc.state.YdbConnectionState;
+import tech.ydb.io.r2dbc.statement.YdbDMLStatement;
+import tech.ydb.io.r2dbc.statement.YdbDDLStatement;
 
 /**
  * @author Kirill Kurdyukov
  */
-public class YDBConnection implements Connection {
-
-    private final TableClient tableClient;
-
+public class YdbConnection implements Connection {
     private volatile IsolationLevel isolationLevel = IsolationLevel.SERIALIZABLE;
     private volatile boolean autoCommit = true;
-    private volatile YDBConnectionState state;
+    private volatile YdbConnectionState state;
 
-    public YDBConnection(TableClient tableClient) {
-        this.tableClient = tableClient;
+    public YdbConnection(YdbConnectionState state) {
+        this.state = state;
     }
 
     @Override
@@ -66,7 +68,7 @@ public class YDBConnection implements Connection {
 
     @Override
     public Batch createBatch() {
-        return new YDBBatch(state);
+        return new YdbBatch(state);
     }
 
     @Override
@@ -76,7 +78,12 @@ public class YDBConnection implements Connection {
 
     @Override
     public Statement createStatement(String sql) {
-        return new YDBStatement(state, sql);
+        YdbQuery query =  YdbSqlParser.parse(sql);
+
+        return switch (query.type()) {
+            case DML -> new YdbDMLStatement(query, state);
+            case DDL -> new YdbDDLStatement(query, state);
+        };
     }
 
     @Override

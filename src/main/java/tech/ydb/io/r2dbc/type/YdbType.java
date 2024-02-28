@@ -32,7 +32,7 @@ import tech.ydb.table.values.Value;
 /**
  * @author Kirill Kurdyukov
  */
-public enum YDBType implements Type {
+public enum YdbType implements Type {
 
     /**
      * Boolean value
@@ -153,7 +153,7 @@ public enum YDBType implements Type {
     private final Class<?> javaType;
     private final Function<Object, Value<?>> valueConstructor;
 
-    YDBType(Class<?> javaType, Function<Object, Value<?>> valueConstructor) {
+    YdbType(Class<?> javaType, Function<Object, Value<?>> valueConstructor) {
         this.javaType = javaType;
         this.valueConstructor = valueConstructor;
     }
@@ -172,7 +172,7 @@ public enum YDBType implements Type {
         return valueConstructor.apply(obj);
     }
 
-    public static YDBType valueOf(R2dbcType r2dbcType) {
+    public static YdbType valueOf(R2dbcType r2dbcType) {
         return switch (r2dbcType) {
             case BOOLEAN -> BOOL;
             case TINYINT -> INT8;

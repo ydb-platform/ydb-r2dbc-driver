@@ -14,27 +14,15 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc;
+package tech.ydb.io.r2dbc.type;
 
-import io.r2dbc.spi.ConnectionFactoryMetadata;
+import tech.ydb.table.values.Type;
 
 /**
- * @author Kirill Kurdyukov
+ * @author Egor Kuleshov
  */
-public final class YDBConnectionFactoryMetadata implements ConnectionFactoryMetadata {
-
-    /**
-     * The name of the YDB product.
-     */
-    public static final String NAME = "YDB";
-
-    static final ConnectionFactoryMetadata INSTANCE = new YDBConnectionFactoryMetadata();
-
-    private YDBConnectionFactoryMetadata() {
-    }
-
-    @Override
-    public String getName() {
-        return NAME;
+public class YdbTypeResolver {
+    public static Type toYdbType(Class<?> type) {
+        return null;
     }
 }

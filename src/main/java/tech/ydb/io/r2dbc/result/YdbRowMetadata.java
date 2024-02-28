@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc;
+package tech.ydb.io.r2dbc.result;
 
 import io.r2dbc.spi.ColumnMetadata;
 import io.r2dbc.spi.RowMetadata;
@@ -25,10 +25,10 @@ import tech.ydb.table.result.ResultSetReader;
 /**
  * @author Kirill Kurdyukov
  */
-public final class YDBRowMetadata implements RowMetadata {
+public final class YdbRowMetadata implements RowMetadata {
     private final ResultSetReader resultSetReader;
 
-    public YDBRowMetadata(ResultSetReader resultSetReader) {
+    public YdbRowMetadata(ResultSetReader resultSetReader) {
         this.resultSetReader = resultSetReader;
     }
 
@@ -46,10 +46,5 @@ public final class YDBRowMetadata implements RowMetadata {
     @Override
     public List<? extends ColumnMetadata> getColumnMetadatas() {
         return null;
-    }
-
-    @Override
-    public Collection<String> getColumnNames() {
-        return List.of(); // TODO can't fetch column names from YDB Java SDK v2
     }
 }

@@ -29,7 +29,7 @@ import tech.ydb.table.TableClient;
 /**
  * @author Kirill Kurdyukov
  */
-public final class YDBConnectionFactoryProvider implements ConnectionFactoryProvider {
+public final class YdbConnectionFactoryProvider implements ConnectionFactoryProvider {
 
     private static final String YDB_DRIVER = "ydb";
 
@@ -45,7 +45,7 @@ public final class YDBConnectionFactoryProvider implements ConnectionFactoryProv
     private static final Option<String> SA_FILE = Option.valueOf("saFile"); // TODO
 
     @Override
-    public YDBConnectionFactory create(ConnectionFactoryOptions connectionFactoryOptions) {
+    public YdbConnectionFactory create(ConnectionFactoryOptions connectionFactoryOptions) {
         OptionExtractor optionExtractor = new OptionExtractor(connectionFactoryOptions);
 
         String schema = optionExtractor.extract(ConnectionFactoryOptions.PROTOCOL);
@@ -73,7 +73,7 @@ public final class YDBConnectionFactoryProvider implements ConnectionFactoryProv
                 )
                 .build();
 
-        return new YDBConnectionFactory(tableClient);
+        return new YdbConnectionFactory(tableClient);
     }
 
     @Override

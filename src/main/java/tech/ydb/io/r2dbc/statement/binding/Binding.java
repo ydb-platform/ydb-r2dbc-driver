@@ -14,30 +14,20 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc;
+package tech.ydb.io.r2dbc.statement.binding;
 
-import io.r2dbc.spi.ColumnMetadata;
-import tech.ydb.io.r2dbc.type.YDBType;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+import tech.ydb.table.query.Params;
+import tech.ydb.table.values.Type;
 
 /**
- * @author Kirill Kurdyukov
+ * @author Egor Kuleshov
  */
-public class YDBColumnMetadata implements ColumnMetadata {
-    private final YDBType ydbType;
-    private final String name;
+public interface Binding extends Params {
+    void setParameter(int index, @Nullable Object obj, @Nonnull Type type);
+    void setParameter(String name, @Nullable Object obj, @Nonnull Type type);
 
-    public YDBColumnMetadata(YDBType ydbType, String name) {
-        this.ydbType = ydbType;
-        this.name = name;
-    }
-
-    @Override
-    public YDBType getType() {
-        return ydbType;
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
+    void validate();
 }

@@ -14,26 +14,36 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc.state;
+package tech.ydb.io.r2dbc.statement.binding;
 
-import reactor.core.publisher.Mono;
-import tech.ydb.io.r2dbc.result.YdbDMLResult;
-import tech.ydb.io.r2dbc.result.YdbDDLResult;
-import tech.ydb.table.query.Params;
+import java.util.Iterator;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 
 /**
- * @author Kirill Kurdyukov
+ * @author Egor Kuleshov
  */
-final class Close implements YdbConnectionState {
-    static final Close INSTANCE = new Close();
-
+public class BindingsImpl implements Bindings {
     @Override
-    public Mono<YdbDMLResult> executeDataQuery(String yql, Params params) {
-        return Mono.error(new IllegalStateException("Connection is closed"));
+    public Binding getCurrent() {
+        return null;
     }
 
     @Override
-    public Mono<YdbDDLResult> executeSchemaQuery(String yql) {
-        return Mono.error(new IllegalStateException("Connection is closed"));
+    public void add(Binding binding) {}
+
+    @Override
+    public Iterator<Binding> iterator() {
+        return null;
+    }
+
+    @Override
+    public void forEach(Consumer<? super Binding> action) {
+        Bindings.super.forEach(action);
+    }
+
+    @Override
+    public Spliterator<Binding> spliterator() {
+        return Bindings.super.spliterator();
     }
 }

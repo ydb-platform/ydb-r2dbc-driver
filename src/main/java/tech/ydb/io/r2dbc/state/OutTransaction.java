@@ -17,39 +17,42 @@
 package tech.ydb.io.r2dbc.state;
 
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
-import tech.ydb.core.Result;
+
+import reactor.core.publisher.Mono;
+import tech.ydb.io.r2dbc.result.YdbDMLResult;
+import tech.ydb.io.r2dbc.result.YdbDDLResult;
 import tech.ydb.io.r2dbc.util.ResultExtractor;
-import tech.ydb.table.Session;
 import tech.ydb.table.TableClient;
-import tech.ydb.table.query.DataQueryResult;
 import tech.ydb.table.query.Params;
 import tech.ydb.table.transaction.TxControl;
 
 /**
  * @author Kirill Kurdyukov
  */
-final class OutTransaction implements YDBConnectionState {
+final class OutTransaction implements YdbConnectionState {
 
     private final TableClient tableClient;
     private final TxControl<?> txControl;
     private final Duration connectionTimeout;
 
-    OutTransaction(TableClient tableClient, TxControl<?> txControl,  Duration connectionTimeout) {
+    OutTransaction(TableClient tableClient, TxControl<?> txControl, Duration connectionTimeout) {
         this.tableClient = tableClient;
         this.txControl = txControl;
         this.connectionTimeout = connectionTimeout;
     }
 
     @Override
-    public CompletableFuture<Result<DataQueryResult>> executeDataQuery(String yql, Params params) {
-        return tableClient.createSession(connectionTimeout)
-                .thenCompose(
-                        sessionResult -> {
-                            Session session = ResultExtractor.extract(sessionResult, "Error creating session");
+    public Mono<YdbDMLResult> executeDataQuery(String yql, Params params) {
+        return Mono.fromFuture(tableClient.createSession(connectionTimeout))
+                .map(sessionResult -> ResultExtractor.extract(sessionResult, "Error creating session"))
+                .flatMap(session -> Mono.fromFuture(session.executeDataQuery(yql, txControl, params)))
+                .map(dataQueryResultResult -> new YdbDMLResult(dataQueryResultResult.getValue()));
+    }
 
-                            return session.executeDataQuery(yql, txControl, params);
-                        }
-                );
+    @Override
+    public Mono<YdbDDLResult> executeSchemaQuery(String yql) {
+        return Mono.fromFuture(tableClient.createSession(connectionTimeout))
+                .map(sessionResult -> ResultExtractor.extract(sessionResult, "Error creating session"))
+                .flatMap(session -> Mono.fromFuture(session.executeSchemeQuery(yql))).map(YdbDDLResult::new);
     }
 }
