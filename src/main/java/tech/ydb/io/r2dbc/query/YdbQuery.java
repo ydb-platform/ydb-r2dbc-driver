@@ -57,8 +57,6 @@ public class YdbQuery {
                             .append(prmType)
                             .append(";\n");
                 }
-            } else if (!indexesArgsNames.isEmpty()) {
-                yql.append("-- DECLARE ").append(indexesArgsNames.size()).append(" PARAMETERS").append("\n");
             }
         }
 
