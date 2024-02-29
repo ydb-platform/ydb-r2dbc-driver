@@ -16,11 +16,34 @@
 
 package tech.ydb.io.r2dbc.statement.binding;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.List;
+
 /**
  * @author Egor Kuleshov
  */
-public interface Bindings extends Iterable<Binding> {
-    Binding getCurrent();
+public class Bindings implements Iterable<Binding> {
+    private final Deque<Binding> bindings = new ArrayDeque<>();
+    private final List<String> indexedParamNames;
 
-    void add(Binding binding);
+    public Bindings(List<String> indexedParamNames) {
+        this.indexedParamNames = indexedParamNames;
+        bindings.add(new Binding(indexedParamNames));
+    }
+
+    public Binding getCurrent() {
+        return bindings.getLast();
+    }
+
+    public void add() {
+        getCurrent().validate();
+        bindings.add(new Binding(indexedParamNames));
+    }
+
+    @Override
+    public Iterator<Binding> iterator() {
+        return bindings.iterator();
+    }
 }

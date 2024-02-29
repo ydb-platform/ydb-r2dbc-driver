@@ -48,7 +48,7 @@ public class YdbDDLStatementTest {
         Assertions.assertThrows(UnsupportedOperationException.class,
                 () -> statement.bind(0, 123));
         Assertions.assertThrows(UnsupportedOperationException.class,
-                () -> statement.bind("testName", 123));
+                () -> statement.bind("$testName", 123));
     }
 
     @Test
@@ -61,6 +61,6 @@ public class YdbDDLStatementTest {
         Assertions.assertThrows(UnsupportedOperationException.class,
                 () -> statement.bindNull(0, Integer.class));
         Assertions.assertThrows(UnsupportedOperationException.class,
-                () -> statement.bindNull("testName", Integer.class));
+                () -> statement.bindNull("$testName", Integer.class));
     }
 }

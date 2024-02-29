@@ -19,7 +19,6 @@ package tech.ydb.io.r2dbc.statement;
 import java.sql.SQLException;
 
 import io.r2dbc.spi.Result;
-import io.r2dbc.spi.Statement;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -35,32 +34,14 @@ public class YdbDMLStatement extends YdbStatement {
     }
 
     @Override
-    public Statement bind(int i, Object o) {
-        return null;
-    }
-
-    @Override
-    public Statement bind(String s, Object o) {
-        return null;
-    }
-
-    @Override
-    public Statement bindNull(int i, Class<?> aClass) {
-        return null;
-    }
-
-    @Override
-    public Statement bindNull(String s, Class<?> aClass) {
-        return null;
-    }
-
-    @Override
     public Publisher<? extends Result> execute() {
+        bindings.getCurrent().validate();
+
         return Flux.fromIterable(bindings)
                 .flatMap(binding -> {
                     try {
                         return connectionState.executeDataQuery(query.getYqlQuery(bindings.getCurrent()),
-                                bindings.getCurrent());
+                                bindings.getCurrent().toParams());
                     } catch (SQLException e) {
                         return Mono.error(e);
                     }

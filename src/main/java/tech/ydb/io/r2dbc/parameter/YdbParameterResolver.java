@@ -19,6 +19,9 @@ package tech.ydb.io.r2dbc.parameter;
 import io.r2dbc.spi.Parameter;
 import io.r2dbc.spi.R2dbcType;
 import java.util.HashMap;
+import java.util.Objects;
+
+import javax.annotation.Nonnull;
 
 import tech.ydb.io.r2dbc.type.YdbType;
 import tech.ydb.table.values.Value;
@@ -43,7 +46,7 @@ public class YdbParameterResolver {
         if (param instanceof Value<?> value) {
             return value;
         } else if (param instanceof Parameter parameter) {
-            return resolveParameter(parameter, param);
+            return resolveParameter(parameter);
         }
 
         if (CLASS_YDB_TYPE.containsKey(param.getClass())) {
@@ -54,11 +57,21 @@ public class YdbParameterResolver {
         }
     }
 
-    private static Value<?> resolveParameter(Parameter parameter, Object param) {
+    public static Value<?> resolveClass(Class<?> clazz) {
+        if (CLASS_YDB_TYPE.containsKey(clazz)) {
+            return CLASS_YDB_TYPE.get(clazz).getYdbType()
+                    .makeOptional()
+                    .emptyValue();
+        } else {
+            throw new RuntimeException(); // TODO correct exception
+        }
+    }
+
+    private static Value<?> resolveParameter(@Nonnull Parameter parameter) {
         if (parameter.getType() instanceof R2dbcType r2dbcType) {
-            return YdbType.valueOf(r2dbcType).createValue(param);
+            return YdbType.valueOf(r2dbcType).createValue(Objects.requireNonNull(parameter.getValue()));
         } else if (parameter.getType() instanceof YdbType ydbType) {
-            return ydbType.createValue(param);
+            return ydbType.createValue(Objects.requireNonNull(parameter.getValue()));
         }
 
         throw new RuntimeException(); // TODO correct exception
