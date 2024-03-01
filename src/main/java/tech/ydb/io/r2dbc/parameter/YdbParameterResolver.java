@@ -18,12 +18,24 @@ package tech.ydb.io.r2dbc.parameter;
 
 import io.r2dbc.spi.Parameter;
 import io.r2dbc.spi.R2dbcType;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Objects;
 
 import javax.annotation.Nonnull;
 
 import tech.ydb.io.r2dbc.type.YdbType;
+import tech.ydb.table.values.DecimalValue;
 import tech.ydb.table.values.Value;
 
 /**
@@ -31,12 +43,37 @@ import tech.ydb.table.values.Value;
  */
 public class YdbParameterResolver {
 
-    private static final HashMap<Class<?>, YdbType> CLASS_YDB_TYPE = new HashMap<>();
+    private static final HashMap<Class<?>, YdbType> CLASS_YDB_TYPE = new HashMap<>(32);
 
     static {
-        for (YdbType value : YdbType.values()) {
-            CLASS_YDB_TYPE.put(value.getJavaType(), value);
-        }
+        CLASS_YDB_TYPE.put(String.class, YdbType.TEXT);
+        CLASS_YDB_TYPE.put(long.class, YdbType.INT64);
+        CLASS_YDB_TYPE.put(Long.class, YdbType.INT64);
+        CLASS_YDB_TYPE.put(BigInteger.class, YdbType.INT64);
+        CLASS_YDB_TYPE.put(byte.class, YdbType.INT8);
+        CLASS_YDB_TYPE.put(Byte.class, YdbType.INT8);
+        CLASS_YDB_TYPE.put(short.class, YdbType.INT16);
+        CLASS_YDB_TYPE.put(Short.class, YdbType.INT16);
+        CLASS_YDB_TYPE.put(int.class, YdbType.INT32);
+        CLASS_YDB_TYPE.put(Integer.class, YdbType.INT32);
+        CLASS_YDB_TYPE.put(float.class, YdbType.FLOAT);
+        CLASS_YDB_TYPE.put(Float.class, YdbType.FLOAT);
+        CLASS_YDB_TYPE.put(double.class, YdbType.DOUBLE);
+        CLASS_YDB_TYPE.put(Double.class, YdbType.DOUBLE);
+        CLASS_YDB_TYPE.put(boolean.class, YdbType.BOOL);
+        CLASS_YDB_TYPE.put(Boolean.class, YdbType.BOOL);
+        CLASS_YDB_TYPE.put(byte[].class, YdbType.BYTES);
+        CLASS_YDB_TYPE.put(Date.class, YdbType.TIMESTAMP);
+        CLASS_YDB_TYPE.put(java.sql.Date.class, YdbType.DATE);
+        CLASS_YDB_TYPE.put(LocalDate.class, YdbType.DATE);
+        CLASS_YDB_TYPE.put(LocalDateTime.class, YdbType.DATETIME);
+        CLASS_YDB_TYPE.put(Time.class, YdbType.DATETIME);
+        CLASS_YDB_TYPE.put(LocalTime.class, YdbType.DATETIME);
+        CLASS_YDB_TYPE.put(Timestamp.class, YdbType.TIMESTAMP);
+        CLASS_YDB_TYPE.put(Instant.class, YdbType.TIMESTAMP);
+        CLASS_YDB_TYPE.put(DecimalValue.class, YdbType.DECIMAL);
+        CLASS_YDB_TYPE.put(BigDecimal.class, YdbType.DECIMAL);
+        CLASS_YDB_TYPE.put(Duration.class, YdbType.INTERVAL);
     }
 
     private YdbParameterResolver() {
@@ -49,31 +86,38 @@ public class YdbParameterResolver {
             return resolveParameter(parameter);
         }
 
-        if (CLASS_YDB_TYPE.containsKey(param.getClass())) {
-            return CLASS_YDB_TYPE.get(param.getClass())
-                    .createValue(param);
-        } else {
-            throw new RuntimeException(); // TODO correct exception
-        }
+        return resolveClass(param.getClass()).createValue(param);
     }
 
-    public static Value<?> resolveClass(Class<?> clazz) {
+    public static Value<?> resolveEmptyValue(Class<?> clazz) {
+        return resolveClass(clazz).getYdbType().makeOptional().emptyValue();
+    }
+
+    public static YdbType resolveClass(Class<?> clazz) {
         if (CLASS_YDB_TYPE.containsKey(clazz)) {
-            return CLASS_YDB_TYPE.get(clazz).getYdbType()
-                    .makeOptional()
-                    .emptyValue();
+            return CLASS_YDB_TYPE.get(clazz);
         } else {
-            throw new RuntimeException(); // TODO correct exception
+            throw new IllegalArgumentException("Could not resolve" + clazz.getName() + "class to YdbType");
         }
     }
 
     private static Value<?> resolveParameter(@Nonnull Parameter parameter) {
-        if (parameter.getType() instanceof R2dbcType r2dbcType) {
-            return YdbType.valueOf(r2dbcType).createValue(Objects.requireNonNull(parameter.getValue()));
-        } else if (parameter.getType() instanceof YdbType ydbType) {
+        if (parameter.getType() instanceof YdbType ydbType) {
+            if (parameter.getValue() == null) {
+                return ydbType.getYdbType().makeOptional().emptyValue();
+            }
             return ydbType.createValue(Objects.requireNonNull(parameter.getValue()));
-        }
+        } else if (parameter.getType() instanceof R2dbcType r2dbcType) {
+            if (parameter.getValue() == null) {
+                return YdbType.valueOf(r2dbcType).getYdbType().makeOptional().emptyValue();
+            }
 
-        throw new RuntimeException(); // TODO correct exception
+            return YdbType.valueOf(r2dbcType).createValue(parameter.getValue());
+        } else {
+            if (parameter.getValue() == null) {
+                return resolveClass(parameter.getType().getJavaType()).getYdbType().makeOptional().emptyValue();
+            }
+            return resolveClass(parameter.getType().getJavaType()).createValue(Objects.requireNonNull(parameter.getValue()));
+        }
     }
 }

@@ -93,7 +93,7 @@ public enum YdbType implements Type {
     /**
      * JSON represented as text. Doesn't support matching, can't be used in the primary key
      */
-    JSON(String.class, PrimitiveType.Yson, obj -> PrimitiveValue.newText((String) obj)),
+    JSON(String.class, PrimitiveType.Yson, obj -> PrimitiveValue.newJson((String) obj)),
 
     /**
      * Universally unique identifier UUID. Not supported for table columns

@@ -55,7 +55,7 @@ public class Binding {
     }
 
     public void bindNull(String name, @Nonnull Class<?> clazz) {
-        put(name, YdbParameterResolver.resolveClass(clazz));
+        put(name, YdbParameterResolver.resolveEmptyValue(clazz));
     }
 
     public void validate() {
