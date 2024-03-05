@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 import java.util.function.Function;
@@ -42,13 +43,11 @@ public enum YdbType implements Type {
 
     /**
      * A signed integer. Acceptable values: from -2^7 to 2^7–1.
-     * Not supported for table columns
      */
     INT8(Byte.class, PrimitiveType.Int8, obj -> PrimitiveValue.newInt8((Byte) obj)),
 
     /**
      * A signed integer. Acceptable values: from –2^15 to 2^15–1.
-     * Not supported for table columns
      */
     INT16(Short.class, PrimitiveType.Int16, obj -> PrimitiveValue.newInt16((Short) obj)),
 
@@ -108,7 +107,7 @@ public enum YdbType implements Type {
     /**
      * Date/time, precision to the second
      */
-    DATETIME(Instant.class, PrimitiveType.Datetime, obj -> PrimitiveValue.newDatetime((Instant) obj)),
+    DATETIME(LocalDateTime.class, PrimitiveType.Datetime, obj -> PrimitiveValue.newDatetime((Instant) obj)),
 
     /**
      * Date/time, precision to the microsecond

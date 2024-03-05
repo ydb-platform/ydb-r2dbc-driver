@@ -33,7 +33,7 @@ public abstract class YdbStatement implements Statement {
 
     public YdbStatement(YdbQuery query, YdbConnectionState connectionState) {
         this.query = query;
-        this.bindings = new Bindings(query.getIndexesArgsNames());
+        this.bindings = new Bindings(query.getIndexArgNames());
         this.connectionState = connectionState;
     }
 

@@ -24,7 +24,7 @@ import tech.ydb.io.r2dbc.state.YdbConnectionState;
 import static org.mockito.Mockito.mock;
 
 /**
- * @author kuleshovegor
+ * @author Egor Kuleshov
  */
 public class YdbDDLStatementTest {
     @Test

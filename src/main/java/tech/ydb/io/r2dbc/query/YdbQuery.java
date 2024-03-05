@@ -50,7 +50,7 @@ public class YdbQuery {
         return yql.toString();
     }
 
-    public List<String> getIndexesArgsNames() {
+    public List<String> getIndexArgNames() {
         return indexesArgsNames;
     }
 

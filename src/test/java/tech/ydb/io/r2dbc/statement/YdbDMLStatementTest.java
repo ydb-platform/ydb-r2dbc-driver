@@ -17,7 +17,7 @@ import tech.ydb.table.values.PrimitiveValue;
 import static org.mockito.Mockito.mock;
 
 /**
- * @author kuleshovegor
+ * @author Egor Kuleshov
  */
 public class YdbDMLStatementTest {
     @Test

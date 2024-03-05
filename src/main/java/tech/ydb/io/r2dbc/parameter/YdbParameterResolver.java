@@ -20,14 +20,9 @@ import io.r2dbc.spi.Parameter;
 import io.r2dbc.spi.R2dbcType;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Objects;
@@ -35,7 +30,6 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 
 import tech.ydb.io.r2dbc.type.YdbType;
-import tech.ydb.table.values.DecimalValue;
 import tech.ydb.table.values.Value;
 
 /**
@@ -49,7 +43,6 @@ public class YdbParameterResolver {
         CLASS_YDB_TYPE.put(String.class, YdbType.TEXT);
         CLASS_YDB_TYPE.put(long.class, YdbType.INT64);
         CLASS_YDB_TYPE.put(Long.class, YdbType.INT64);
-        CLASS_YDB_TYPE.put(BigInteger.class, YdbType.INT64);
         CLASS_YDB_TYPE.put(byte.class, YdbType.INT8);
         CLASS_YDB_TYPE.put(Byte.class, YdbType.INT8);
         CLASS_YDB_TYPE.put(short.class, YdbType.INT16);
@@ -67,11 +60,6 @@ public class YdbParameterResolver {
         CLASS_YDB_TYPE.put(java.sql.Date.class, YdbType.DATE);
         CLASS_YDB_TYPE.put(LocalDate.class, YdbType.DATE);
         CLASS_YDB_TYPE.put(LocalDateTime.class, YdbType.DATETIME);
-        CLASS_YDB_TYPE.put(Time.class, YdbType.DATETIME);
-        CLASS_YDB_TYPE.put(LocalTime.class, YdbType.DATETIME);
-        CLASS_YDB_TYPE.put(Timestamp.class, YdbType.TIMESTAMP);
-        CLASS_YDB_TYPE.put(Instant.class, YdbType.TIMESTAMP);
-        CLASS_YDB_TYPE.put(DecimalValue.class, YdbType.DECIMAL);
         CLASS_YDB_TYPE.put(BigDecimal.class, YdbType.DECIMAL);
         CLASS_YDB_TYPE.put(Duration.class, YdbType.INTERVAL);
     }

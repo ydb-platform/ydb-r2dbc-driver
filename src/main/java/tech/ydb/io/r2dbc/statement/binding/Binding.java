@@ -22,9 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import tech.ydb.io.r2dbc.parameter.YdbParameterResolver;
 import tech.ydb.table.query.Params;
 import tech.ydb.table.values.Value;
@@ -42,19 +39,19 @@ public class Binding {
         this.indexedNames = indexedNames;
     }
 
-    public void bind(int index, @Nullable Object obj) {
+    public void bind(int index, Object obj) {
         bind(getNameByIndex(index), obj);
     }
 
-    public void bind(String name, @Nullable Object obj) {
+    public void bind(String name, Object obj) {
         put(name, YdbParameterResolver.resolve(obj));
     }
 
-    public void bindNull(int index, @Nonnull Class<?> clazz) {
+    public void bindNull(int index, Class<?> clazz) {
         bindNull(getNameByIndex(index), clazz);
     }
 
-    public void bindNull(String name, @Nonnull Class<?> clazz) {
+    public void bindNull(String name, Class<?> clazz) {
         put(name, YdbParameterResolver.resolveEmptyValue(clazz));
     }
 
