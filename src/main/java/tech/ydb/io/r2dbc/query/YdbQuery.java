@@ -28,11 +28,13 @@ public class YdbQuery {
     private final String yqlQuery;
     private final QueryType type;
     private final List<String> indexesArgsNames;
+    private final List<ExpressionType> expressionTypes;
 
-    public YdbQuery(String yql, List<String> indexesArgsNames, QueryType queryType) {
+    YdbQuery(String yql, List<String> indexesArgsNames, QueryType queryType, List<ExpressionType> expressionTypes) {
         this.yqlQuery = yql;
         this.indexesArgsNames = indexesArgsNames;
         this.type = queryType;
+        this.expressionTypes = expressionTypes;
     }
 
     public String getYqlQuery(Binding binding) throws SQLException {
@@ -56,5 +58,9 @@ public class YdbQuery {
 
     public QueryType type() {
         return type;
+    }
+
+    public List<String> getIndexesArgsNames() {
+        return indexesArgsNames;
     }
 }
