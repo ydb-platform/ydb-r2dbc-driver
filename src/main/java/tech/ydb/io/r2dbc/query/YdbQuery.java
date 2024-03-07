@@ -88,4 +88,13 @@ public class YdbQuery {
     public int hashCode() {
         return Objects.hash(yqlQuery, type, indexesArgsNames, sqlOperations);
     }
+
+    public List<ExpressionType> getExpressionTypes() {
+        return expressionTypes;
+    }
+
+    @Override
+    public String toString() {
+        return yqlQuery;
+    }
 }
