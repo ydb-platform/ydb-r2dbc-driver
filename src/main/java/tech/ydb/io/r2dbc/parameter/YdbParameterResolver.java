@@ -57,7 +57,6 @@ public class YdbParameterResolver {
         CLASS_YDB_TYPE.put(Boolean.class, YdbType.BOOL);
         CLASS_YDB_TYPE.put(byte[].class, YdbType.BYTES);
         CLASS_YDB_TYPE.put(Date.class, YdbType.TIMESTAMP);
-        CLASS_YDB_TYPE.put(java.sql.Date.class, YdbType.DATE);
         CLASS_YDB_TYPE.put(LocalDate.class, YdbType.DATE);
         CLASS_YDB_TYPE.put(LocalDateTime.class, YdbType.DATETIME);
         CLASS_YDB_TYPE.put(BigDecimal.class, YdbType.DECIMAL);

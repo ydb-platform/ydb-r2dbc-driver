@@ -44,7 +44,7 @@ public class YdbQuery {
         binding.values().forEach((name, value) -> yql.append("DECLARE ")
                 .append(name)
                 .append(" AS ")
-                .append(value.getType().toString())
+                .append(value.getType())
                 .append(";\n"));
 
         return yql.toString();
