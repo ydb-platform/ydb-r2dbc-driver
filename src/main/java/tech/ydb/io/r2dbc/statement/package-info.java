@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc.type;
-
-import tech.ydb.table.values.Type;
-
 /**
  * @author Egor Kuleshov
+ *
  */
-public class YdbTypeResolver {
-    public static Type toYdbType(Class<?> type) {
-        return null;
-    }
-}
+@NonNullApi
+package tech.ydb.io.r2dbc.statement;
+
+import reactor.util.annotation.NonNullApi;

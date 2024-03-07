@@ -16,14 +16,10 @@
 
 package tech.ydb.io.r2dbc.query;
 
-
-import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
-import tech.ydb.table.query.Params;
-import tech.ydb.table.values.Value;
+import tech.ydb.io.r2dbc.statement.binding.Binding;
 
 /**
  * @author Egor Kuleshov
@@ -33,35 +29,29 @@ public class YdbQuery {
     private final QueryType type;
     private final List<String> indexesArgsNames;
 
-    YdbQuery(String yql, List<String> indexesArgsNames, QueryType queryType) {
+    public YdbQuery(String yql, List<String> indexesArgsNames, QueryType queryType) {
         this.yqlQuery = yql;
         this.indexesArgsNames = indexesArgsNames;
         this.type = queryType;
     }
 
-    public String getYqlQuery(Params params) throws SQLException {
+    public String getYqlQuery(Binding binding) throws SQLException {
+        return getDeclares(binding) + yqlQuery;
+    }
+
+    public static String getDeclares(Binding binding) {
         StringBuilder yql = new StringBuilder();
+        binding.values().forEach((name, value) -> yql.append("DECLARE ")
+                .append(name)
+                .append(" AS ")
+                .append(value.getType())
+                .append(";\n"));
 
-        if (!indexesArgsNames.isEmpty()) {
-            if (params != null) {
-                Map<String, Value<?>> values = params.values();
-                for (String prm : indexesArgsNames) {
-                    if (!values.containsKey(prm)) {
-                        throw new SQLDataException("Missing value for parameter: " + prm);
-                    }
-
-                    String prmType = values.get(prm).getType().toString();
-                    yql.append("DECLARE ")
-                            .append(prm)
-                            .append(" AS ")
-                            .append(prmType)
-                            .append(";\n");
-                }
-            }
-        }
-
-        yql.append(yqlQuery);
         return yql.toString();
+    }
+
+    public List<String> getIndexArgNames() {
+        return indexesArgsNames;
     }
 
     public QueryType type() {

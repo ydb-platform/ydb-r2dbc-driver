@@ -21,6 +21,7 @@ import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 import tech.ydb.io.r2dbc.result.YdbDDLResult;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
+import tech.ydb.io.r2dbc.statement.binding.Binding;
 
 /**
  * @author Egor Kuleshov
@@ -56,10 +57,12 @@ public class YdbDDLStatement extends YdbStatement {
         throw new UnsupportedOperationException(NOT_SUPPORTED_MESSAGE);
     }
 
+
+
     @Override
     public Mono<YdbDDLResult> execute() {
         try {
-            return connectionState.executeSchemaQuery(query.getYqlQuery(bindings.getCurrent()));
+            return connectionState.executeSchemaQuery(query.getYqlQuery(Binding.empty()));
         } catch (Exception e) {
             return Mono.error(e);
         }

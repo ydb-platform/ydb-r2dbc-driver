@@ -19,11 +19,7 @@ package tech.ydb.io.r2dbc.statement;
 
 import io.r2dbc.spi.Statement;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
-import tech.ydb.io.r2dbc.statement.binding.Binding;
-import tech.ydb.io.r2dbc.statement.binding.BindingImpl;
 import tech.ydb.io.r2dbc.statement.binding.Bindings;
-import tech.ydb.io.r2dbc.statement.binding.BindingsImpl;
-import tech.ydb.io.r2dbc.type.YdbTypeResolver;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 
 /**
@@ -37,44 +33,46 @@ public abstract class YdbStatement implements Statement {
 
     public YdbStatement(YdbQuery query, YdbConnectionState connectionState) {
         this.query = query;
-        this.bindings = new BindingsImpl();
+        this.bindings = new Bindings(query.getIndexArgNames());
         this.connectionState = connectionState;
     }
 
     @Override
     public Statement add() {
-        Binding binding = this.bindings.getCurrent();
-        binding.validate();
-        this.bindings.add(new BindingImpl());
+        bindings.add();
 
         return this;
     }
 
     @Override
     public Statement bind(int index, Object object) {
-        bindings.getCurrent().setParameter(index, object, YdbTypeResolver.toYdbType(object.getClass()));
+        bindings.getCurrent().bind(index, object);
 
         return this;
     }
 
     @Override
     public Statement bind(String name, Object object) {
-        bindings.getCurrent().setParameter(name, object, YdbTypeResolver.toYdbType(object.getClass()));
+        bindings.getCurrent().bind(name, object);
 
         return this;
     }
 
     @Override
     public Statement bindNull(int index, Class<?> aClass) {
-        bindings.getCurrent().setParameter(index, null, YdbTypeResolver.toYdbType(aClass));
+        bindings.getCurrent().bindNull(index, aClass);
 
         return this;
     }
 
     @Override
     public Statement bindNull(String name, Class<?> aClass) {
-        bindings.getCurrent().setParameter(name, null, YdbTypeResolver.toYdbType(aClass));
+        bindings.getCurrent().bindNull(name, aClass);
 
         return this;
+    }
+
+    Bindings getBindings() {
+        return bindings;
     }
 }
