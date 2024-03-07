@@ -63,4 +63,13 @@ public class YdbQuery {
     public List<String> getIndexesArgsNames() {
         return indexesArgsNames;
     }
+
+    public List<ExpressionType> getExpressionTypes() {
+        return expressionTypes;
+    }
+
+    @Override
+    public String toString() {
+        return yqlQuery;
+    }
 }
