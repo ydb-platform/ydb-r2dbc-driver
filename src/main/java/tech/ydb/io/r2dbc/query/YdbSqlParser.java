@@ -53,7 +53,7 @@ public class YdbSqlParser {
                 case '/' -> i = parseBlockComment(chars, i);
                 case ';' -> nextExpression = true;
                 case '?' -> {
-                    i = parseSpecialParam(chars, i, fragmentStart, builder);
+                    parseSpecialParam(chars, i, fragmentStart, builder);
                     fragmentStart = i + 1;
                 }
                 default -> {
@@ -73,16 +73,9 @@ public class YdbSqlParser {
         return builder.build();
     }
 
-    private static int parseSpecialParam(char[] chars, int i, int prev, YdbQueryBuilder builder) {
+    private static void parseSpecialParam(char[] chars, int i, int prev, YdbQueryBuilder builder) {
         builder.append(chars, prev, i - prev);
-        if (i + 1 < chars.length && chars[i + 1] == '?') {
-            builder.append('?');
-            i++;
-        } else {
-            builder.addSpecialParameter();
-        }
-
-        return i;
+        builder.addSpecialParameter();
     }
 
     private static ExpressionType parseExpression(final char[] chars, int i) {
@@ -200,6 +193,8 @@ public class YdbSqlParser {
                 String next = "$jp" + argsCounter;
                 if (!origin.contains(next)) {
                     args.add(next);
+                    append(next);
+
                     return;
                 }
             }

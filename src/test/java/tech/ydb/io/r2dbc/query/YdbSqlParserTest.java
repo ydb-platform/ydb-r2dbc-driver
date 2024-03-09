@@ -16,14 +16,18 @@ public class YdbSqlParserTest {
         return Stream.of(
                 new Object[]{"SELECT $1", new YdbQuery("SELECT $1", List.of(), QueryType.DML,
                         List.of(ExpressionType.SELECT))},
-                new Object[]{"SELECT $1;", new YdbQuery("SELECT $1", List.of(), QueryType.DML,
+                new Object[]{"SELECT $1;", new YdbQuery("SELECT $1;", List.of(), QueryType.DML,
                         List.of(ExpressionType.SELECT))},
-                new Object[]{"Insert $1;", new YdbQuery("Insert $1", List.of(), QueryType.DML,
+                new Object[]{"INSERT $1", new YdbQuery("INSERT $1", List.of(), QueryType.DML,
+                        List.of(ExpressionType.UPDATE))},
+                new Object[]{"SELECT ?", new YdbQuery("SELECT $jp1", List.of("$jp1"), QueryType.DML,
                         List.of(ExpressionType.SELECT))},
-                new Object[]{"SELECT ?;", new YdbQuery("SELECT $1", List.of("$jp1"), QueryType.DML,
+                new Object[]{"SELECT ? ?", new YdbQuery("SELECT $jp1 $jp2", List.of("$jp1", "$jp2"), QueryType.DML,
                         List.of(ExpressionType.SELECT))},
-                new Object[]{"SELECT ?? ?;", new YdbQuery("SELECT $1", List.of("$jp1", "$jp2"), QueryType.DML,
-                        List.of(ExpressionType.SELECT))});
+                new Object[]{"CREATE TABLE", new YdbQuery("CREATE TABLE", List.of(), QueryType.DDL,
+                        List.of(ExpressionType.SCHEME))},
+                new Object[]{"DROP TABLE", new YdbQuery("DROP TABLE", List.of(), QueryType.DDL,
+                        List.of(ExpressionType.SCHEME))});
     }
 
     @MethodSource("sqlValues")
@@ -31,8 +35,6 @@ public class YdbSqlParserTest {
     void parserTest(String value, YdbQuery expected) {
         YdbQuery parsedQuery = YdbSqlParser.parse(value);
 
-        Assertions.assertEquals(expected.getExpressionTypes(), parsedQuery.getExpressionTypes());
-        Assertions.assertEquals(expected.getIndexesArgsNames(), parsedQuery.getIndexesArgsNames());
-        Assertions.assertEquals(expected.type(), parsedQuery.type());
+        Assertions.assertEquals(expected, parsedQuery);
     }
 }

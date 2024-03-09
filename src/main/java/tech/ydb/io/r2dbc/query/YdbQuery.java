@@ -18,6 +18,7 @@ package tech.ydb.io.r2dbc.query;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
 
 import tech.ydb.io.r2dbc.statement.binding.Binding;
 
@@ -30,7 +31,8 @@ public class YdbQuery {
     private final List<String> indexesArgsNames;
     private final List<ExpressionType> expressionTypes;
 
-    YdbQuery(String yql, List<String> indexesArgsNames, QueryType queryType, List<ExpressionType> expressionTypes) {
+    public YdbQuery(String yql, List<String> indexesArgsNames, QueryType queryType,
+                    List<ExpressionType> expressionTypes) {
         this.yqlQuery = yql;
         this.indexesArgsNames = indexesArgsNames;
         this.type = queryType;
@@ -60,10 +62,6 @@ public class YdbQuery {
         return type;
     }
 
-    public List<String> getIndexesArgsNames() {
-        return indexesArgsNames;
-    }
-
     public List<ExpressionType> getExpressionTypes() {
         return expressionTypes;
     }
@@ -71,5 +69,23 @@ public class YdbQuery {
     @Override
     public String toString() {
         return yqlQuery;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        YdbQuery query = (YdbQuery) o;
+        return Objects.equals(yqlQuery, query.yqlQuery) && type == query.type && Objects.equals(indexesArgsNames,
+                query.indexesArgsNames) && Objects.equals(expressionTypes, query.expressionTypes);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(yqlQuery, type, indexesArgsNames, expressionTypes);
     }
 }
