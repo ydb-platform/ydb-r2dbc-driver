@@ -182,7 +182,7 @@ public class YdbSqlParser {
         private int argsCounter = 0;
         private QueryType currentType = null;
 
-        public YdbQueryBuilder(String origin) {
+        YdbQueryBuilder(String origin) {
             this.origin = origin;
             this.query = new StringBuilder(origin.length() + 10);
         }

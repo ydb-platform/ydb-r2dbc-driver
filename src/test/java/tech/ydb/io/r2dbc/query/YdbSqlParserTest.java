@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -16,8 +17,12 @@ public class YdbSqlParserTest {
         return Stream.of(
                 new Object[]{"SELECT $1", new YdbQuery("SELECT $1", List.of(), QueryType.DML,
                         List.of(ExpressionType.SELECT))},
+                new Object[]{"select $1", new YdbQuery("select $1", List.of(), QueryType.DML,
+                        List.of(ExpressionType.SELECT))},
                 new Object[]{"SELECT $1;", new YdbQuery("SELECT $1;", List.of(), QueryType.DML,
                         List.of(ExpressionType.SELECT))},
+                new Object[]{"SELECT $1; Insert ?", new YdbQuery("SELECT $1; Insert $jp1", List.of("$jp1"),
+                        QueryType.DML, List.of(ExpressionType.SELECT, ExpressionType.UPDATE))},
                 new Object[]{"INSERT $1", new YdbQuery("INSERT $1", List.of(), QueryType.DML,
                         List.of(ExpressionType.UPDATE))},
                 new Object[]{"SELECT ?", new YdbQuery("SELECT $jp1", List.of("$jp1"), QueryType.DML,
@@ -36,5 +41,12 @@ public class YdbSqlParserTest {
         YdbQuery parsedQuery = YdbSqlParser.parse(value);
 
         Assertions.assertEquals(expected, parsedQuery);
+    }
+
+    @Test
+    void parserTwoQueryTypesTest() {
+        Assertions.assertThrows(UnsupportedOperationException.class,
+                () -> YdbSqlParser.parse("SELECT ?; CREATE TABLE ?"),
+                "DML and DDL don't support in one query");
     }
 }
