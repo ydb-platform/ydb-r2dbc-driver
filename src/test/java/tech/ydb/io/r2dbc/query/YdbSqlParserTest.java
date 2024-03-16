@@ -16,23 +16,23 @@ public class YdbSqlParserTest {
     static Stream<Object[]> sqlValues() {
         return Stream.of(
                 new Object[]{"SELECT $1", new YdbQuery("SELECT $1", List.of(), QueryType.DML,
-                        List.of(ExpressionType.SELECT))},
+                        List.of(SqlOperation.SELECT))},
                 new Object[]{"select $1", new YdbQuery("select $1", List.of(), QueryType.DML,
-                        List.of(ExpressionType.SELECT))},
+                        List.of(SqlOperation.SELECT))},
                 new Object[]{"SELECT $1;", new YdbQuery("SELECT $1;", List.of(), QueryType.DML,
-                        List.of(ExpressionType.SELECT))},
+                        List.of(SqlOperation.SELECT))},
                 new Object[]{"SELECT $1; Insert ?", new YdbQuery("SELECT $1; Insert $jp1", List.of("$jp1"),
-                        QueryType.DML, List.of(ExpressionType.SELECT, ExpressionType.UPDATE))},
+                        QueryType.DML, List.of(SqlOperation.SELECT, SqlOperation.INSERT))},
                 new Object[]{"INSERT $1", new YdbQuery("INSERT $1", List.of(), QueryType.DML,
-                        List.of(ExpressionType.UPDATE))},
+                        List.of(SqlOperation.INSERT))},
                 new Object[]{"SELECT ?", new YdbQuery("SELECT $jp1", List.of("$jp1"), QueryType.DML,
-                        List.of(ExpressionType.SELECT))},
+                        List.of(SqlOperation.SELECT))},
                 new Object[]{"SELECT ? ?", new YdbQuery("SELECT $jp1 $jp2", List.of("$jp1", "$jp2"), QueryType.DML,
-                        List.of(ExpressionType.SELECT))},
+                        List.of(SqlOperation.SELECT))},
                 new Object[]{"CREATE TABLE", new YdbQuery("CREATE TABLE", List.of(), QueryType.DDL,
-                        List.of(ExpressionType.SCHEME))},
+                        List.of(SqlOperation.CREATE))},
                 new Object[]{"DROP TABLE", new YdbQuery("DROP TABLE", List.of(), QueryType.DDL,
-                        List.of(ExpressionType.SCHEME))});
+                        List.of(SqlOperation.DROP))});
     }
 
     @MethodSource("sqlValues")

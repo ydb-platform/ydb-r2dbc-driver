@@ -29,14 +29,18 @@ public class YdbQuery {
     private final String yqlQuery;
     private final QueryType type;
     private final List<String> indexesArgsNames;
-    private final List<ExpressionType> expressionTypes;
+    private final List<SqlOperation> sqlOperations;
 
     public YdbQuery(String yql, List<String> indexesArgsNames, QueryType queryType,
-                    List<ExpressionType> expressionTypes) {
+                    List<SqlOperation> sqlOperations) {
         this.yqlQuery = yql;
         this.indexesArgsNames = indexesArgsNames;
         this.type = queryType;
-        this.expressionTypes = expressionTypes;
+        this.sqlOperations = sqlOperations;
+    }
+
+    public YdbQuery(String yql, List<String> indexesArgsNames, QueryType queryType) {
+        this(yql, indexesArgsNames, queryType, List.of());
     }
 
     public String getYqlQuery(Binding binding) throws SQLException {
@@ -62,10 +66,6 @@ public class YdbQuery {
         return type;
     }
 
-    public List<ExpressionType> getExpressionTypes() {
-        return expressionTypes;
-    }
-
     @Override
     public String toString() {
         return yqlQuery;
@@ -81,11 +81,11 @@ public class YdbQuery {
         }
         YdbQuery query = (YdbQuery) o;
         return Objects.equals(yqlQuery, query.yqlQuery) && type == query.type && Objects.equals(indexesArgsNames,
-                query.indexesArgsNames) && Objects.equals(expressionTypes, query.expressionTypes);
+                query.indexesArgsNames) && Objects.equals(sqlOperations, query.sqlOperations);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(yqlQuery, type, indexesArgsNames, expressionTypes);
+        return Objects.hash(yqlQuery, type, indexesArgsNames, sqlOperations);
     }
 }

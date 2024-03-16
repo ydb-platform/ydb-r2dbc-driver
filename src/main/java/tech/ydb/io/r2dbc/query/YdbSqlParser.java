@@ -23,16 +23,6 @@ import java.util.Objects;
 
 import io.r2dbc.spi.R2dbcBadGrammarException;
 
-import static tech.ydb.io.r2dbc.query.YdbParserUtils.parseAlterKeyword;
-import static tech.ydb.io.r2dbc.query.YdbParserUtils.parseCreateKeyword;
-import static tech.ydb.io.r2dbc.query.YdbParserUtils.parseDeleteKeyword;
-import static tech.ydb.io.r2dbc.query.YdbParserUtils.parseDropKeyword;
-import static tech.ydb.io.r2dbc.query.YdbParserUtils.parseInsertKeyword;
-import static tech.ydb.io.r2dbc.query.YdbParserUtils.parseReplaceKeyword;
-import static tech.ydb.io.r2dbc.query.YdbParserUtils.parseSelectKeyword;
-import static tech.ydb.io.r2dbc.query.YdbParserUtils.parseUpdateKeyword;
-import static tech.ydb.io.r2dbc.query.YdbParserUtils.parseUpsertKeyword;
-
 /**
  * @author Egor Kuleshov
  */
@@ -59,7 +49,7 @@ public class YdbSqlParser {
                 default -> {
                     if (nextExpression && Character.isJavaIdentifierStart(ch)) {
                         nextExpression = false;
-                        builder.addExpression(parseExpression(chars, i));
+                        builder.addExpression(parseSqlOperation(chars, i));
                     }
                 }
             }
@@ -78,34 +68,30 @@ public class YdbSqlParser {
         builder.addSpecialParameter();
     }
 
-    private static ExpressionType parseExpression(final char[] chars, int i) {
-        if (parseSelectKeyword(chars, i)) {
-            return ExpressionType.SELECT;
+    private static SqlOperation parseSqlOperation(char[] query, int offset) {
+        SqlOperation[] sqlOperations = SqlOperation.values();
+        for (SqlOperation sqlOperation : sqlOperations) {
+            if (parseWord(query, offset, sqlOperation.getKeyword())
+                    && Character.isWhitespace(query[offset + sqlOperation.getKeyword().length])) {
+                return sqlOperation;
+            }
         }
 
-        if (isUpdateExpression(chars, i)) {
-            return ExpressionType.UPDATE;
-        }
-
-        if (isSchemeExpression(chars, i)) {
-            return ExpressionType.SCHEME;
-        }
-
-        throw new R2dbcBadGrammarException("Unexpected token at position " + i);
+        throw new R2dbcBadGrammarException("Unknown YQL keyword at position " + offset);
     }
 
-    private static boolean isUpdateExpression(final char[] chars, int i) {
-        return parseUpdateKeyword(chars, i)
-                || parseInsertKeyword(chars, i)
-                || parseUpsertKeyword(chars, i)
-                || parseDeleteKeyword(chars, i)
-                || parseReplaceKeyword(chars, i);
-    }
+    private static boolean parseWord(char[] query, int offset, char[] word) {
+        if (offset + word.length > query.length) {
+            return false;
+        }
 
-    private static boolean isSchemeExpression(final char[] chars, int i) {
-        return parseAlterKeyword(chars, i)
-                || parseCreateKeyword(chars, i)
-                || parseDropKeyword(chars, i);
+        for (int i = 0; i < word.length; i++) {
+            if ((query[offset + i] | 32) != word[i]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static int parseSingleQuotes(final char[] query, int offset) {
@@ -177,12 +163,13 @@ public class YdbSqlParser {
         private final String origin;
         private final StringBuilder query;
         private final List<String> args = new ArrayList<>();
-        private final List<ExpressionType> expressions = new ArrayList<>();
+        private final List<SqlOperation> expressions = new ArrayList<>();
 
         private int argsCounter = 0;
         private QueryType currentType = null;
 
         YdbQueryBuilder(String origin) {
+
             this.origin = origin;
             this.query = new StringBuilder(origin.length() + 10);
         }
@@ -200,14 +187,14 @@ public class YdbSqlParser {
             }
         }
 
-        public void addExpression(ExpressionType expressionType) {
-            expressions.add(expressionType);
+        public void addExpression(SqlOperation sqlOperation) {
+            expressions.add(sqlOperation);
 
-            if (currentType != null && currentType != expressionType.getQueryType()) {
+            if (currentType != null && currentType != sqlOperation.getOperationType().getQueryType()) {
                 throw new UnsupportedOperationException("DML and DDL don't support in one query");
             }
 
-            this.currentType = expressionType.getQueryType();
+            this.currentType = sqlOperation.getOperationType().getQueryType();
         }
 
         public void append(char[] chars, int start, int end) {
