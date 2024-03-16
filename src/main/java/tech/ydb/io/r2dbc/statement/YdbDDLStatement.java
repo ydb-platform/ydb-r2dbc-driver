@@ -17,7 +17,7 @@
 package tech.ydb.io.r2dbc.statement;
 
 import io.r2dbc.spi.Statement;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 import tech.ydb.io.r2dbc.result.YdbDDLResult;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
@@ -60,11 +60,11 @@ public class YdbDDLStatement extends YdbStatement {
 
 
     @Override
-    public Mono<YdbDDLResult> execute() {
+    public Flux<YdbDDLResult> execute() {
         try {
             return connectionState.executeSchemaQuery(query.getYqlQuery(Binding.empty()));
         } catch (Exception e) {
-            return Mono.error(e);
+            return Flux.error(e);
         }
     }
 }

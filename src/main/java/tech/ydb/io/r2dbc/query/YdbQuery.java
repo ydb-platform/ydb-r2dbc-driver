@@ -16,7 +16,6 @@
 
 package tech.ydb.io.r2dbc.query;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 
@@ -43,7 +42,7 @@ public class YdbQuery {
         this(yql, indexesArgsNames, queryType, List.of());
     }
 
-    public String getYqlQuery(Binding binding) throws SQLException {
+    public String getYqlQuery(Binding binding) {
         return getDeclares(binding) + yqlQuery;
     }
 

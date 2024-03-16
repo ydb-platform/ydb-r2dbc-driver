@@ -14,22 +14,11 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc.state;
-
-import java.util.List;
-
-import reactor.core.publisher.Flux;
-import tech.ydb.io.r2dbc.query.ExpressionType;
-import tech.ydb.io.r2dbc.result.YdbDMLResult;
-import tech.ydb.io.r2dbc.result.YdbDDLResult;
-import tech.ydb.table.query.Params;
-
 /**
- * @author Kirill Kurdyukov
+ * @author Egor Kuleshov
+ *
  */
-public interface YdbConnectionState {
+@NonNullApi
+package tech.ydb.io.r2dbc.result;
 
-    Flux<YdbDMLResult> executeDataQuery(String yql, Params params, List<ExpressionType> expressionTypes);
-
-    Flux<YdbDDLResult> executeSchemaQuery(String yql);
-}
+import reactor.util.annotation.NonNullApi;

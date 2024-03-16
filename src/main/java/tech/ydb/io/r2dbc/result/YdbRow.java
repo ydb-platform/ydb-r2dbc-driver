@@ -19,15 +19,18 @@ package tech.ydb.io.r2dbc.result;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import tech.ydb.table.result.ResultSetReader;
+import tech.ydb.table.values.PrimitiveType;
 
 /**
  * @author Kirill Kurdyukov
  */
 public final class YdbRow implements Row {
     private final ResultSetReader resultSetReader;
+    private final int rowIndex;
 
-    public YdbRow(ResultSetReader resultSetReader) {
+    public YdbRow(ResultSetReader resultSetReader, int rowIndex) {
         this.resultSetReader = resultSetReader;
+        this.rowIndex = rowIndex;
     }
 
     @Override
@@ -37,13 +40,20 @@ public final class YdbRow implements Row {
 
     @Override
     public <T> T get(int index, Class<T> type) {
-        resultSetReader.getColumn(index).getType();
+        resultSetReader.setRowIndex(rowIndex);
+        if (resultSetReader.getColumn(index).getType().equals(PrimitiveType.Text)) {
+            if (resultSetReader.getColumn(index).getValue().asOptional().isPresent()) {
+                return (T) String.valueOf(resultSetReader.getColumn(index).getValue().asData().getText());
+            }
+
+            return null;
+        }
         
         return null;
     }
 
     @Override
     public <T> T get(String name, Class<T> type) {
-        return null;
+        return get(resultSetReader.getColumnIndex(name), type);
     }
 }

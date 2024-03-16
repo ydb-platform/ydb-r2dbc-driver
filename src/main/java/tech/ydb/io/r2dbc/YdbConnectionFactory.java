@@ -16,7 +16,6 @@
 
 package tech.ydb.io.r2dbc;
 
-import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryMetadata;
 import reactor.core.publisher.Mono;
@@ -34,8 +33,8 @@ public final class YdbConnectionFactory implements ConnectionFactory {
     }
 
     @Override
-    public Mono<? extends Connection> create() {
-        return Mono.empty();
+    public Mono<YdbConnection> create() {
+        return Mono.just(new YdbConnection(tableClient));
     }
 
     @Override
