@@ -22,7 +22,7 @@ import static org.mockito.Mockito.mock;
 public class YdbDMLStatementTest {
     @Test
     public void bindNamedTest() {
-        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML, List.of());
+        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
         YdbConnectionState connectionState = mock(YdbConnectionState.class);
         YdbStatement statement = new YdbDMLStatement(query, connectionState);
 
@@ -36,7 +36,7 @@ public class YdbDMLStatementTest {
 
     @Test
     public void bindParameterTest() {
-        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML, List.of());
+        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
         YdbConnectionState connectionState = mock(YdbConnectionState.class);
         YdbStatement statement = new YdbDMLStatement(query, connectionState);
 
@@ -50,7 +50,7 @@ public class YdbDMLStatementTest {
 
     @Test
     public void bindYdbParameterTest() {
-        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML, List.of());
+        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
         YdbConnectionState connectionState = mock(YdbConnectionState.class);
         YdbStatement statement = new YdbDMLStatement(query, connectionState);
 
@@ -64,7 +64,7 @@ public class YdbDMLStatementTest {
 
     @Test
     public void bindClassParameterTest() {
-        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML, List.of());
+        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
         YdbConnectionState connectionState = mock(YdbConnectionState.class);
         YdbStatement statement = new YdbDMLStatement(query, connectionState);
 
@@ -78,7 +78,7 @@ public class YdbDMLStatementTest {
 
     @Test
     public void bindIndexedTest() {
-        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML, List.of());
+        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
         YdbConnectionState connectionState = mock(YdbConnectionState.class);
         YdbStatement statement = new YdbDMLStatement(query, connectionState);
 
@@ -92,7 +92,7 @@ public class YdbDMLStatementTest {
 
     @Test
     public void bindNullTest() {
-        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML, List.of());
+        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
         YdbConnectionState connectionState = mock(YdbConnectionState.class);
         YdbStatement statement = new YdbDMLStatement(query, connectionState);
 
@@ -106,7 +106,7 @@ public class YdbDMLStatementTest {
 
     @Test
     public void bindNullParameterTest() {
-        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML, List.of());
+        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
         YdbConnectionState connectionState = mock(YdbConnectionState.class);
         YdbStatement statement = new YdbDMLStatement(query, connectionState);
 
@@ -120,7 +120,7 @@ public class YdbDMLStatementTest {
 
     @Test
     public void bindNullYdbParameterTest() {
-        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML, List.of());
+        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
         YdbConnectionState connectionState = mock(YdbConnectionState.class);
         YdbStatement statement = new YdbDMLStatement(query, connectionState);
 
@@ -134,7 +134,7 @@ public class YdbDMLStatementTest {
 
     @Test
     public void bindNullClassParameterTest() {
-        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA"), QueryType.DML, List.of());
+        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA"), QueryType.DML);
         YdbConnectionState connectionState = mock(YdbConnectionState.class);
         YdbStatement statement = new YdbDMLStatement(query, connectionState);
 
@@ -146,7 +146,7 @@ public class YdbDMLStatementTest {
 
     @Test
     public void addBeforeFullBoundedTest() {
-        YdbQuery query = new YdbQuery("test_sql", List.of("$testParam"), QueryType.DML, List.of());
+        YdbQuery query = new YdbQuery("test_sql", List.of("$testParam"), QueryType.DML);
         YdbConnectionState connectionState = mock(YdbConnectionState.class);
         YdbStatement statement = new YdbDMLStatement(query, connectionState);
 
@@ -155,7 +155,7 @@ public class YdbDMLStatementTest {
 
     @Test
     public void executeBeforeFullBoundedTest() {
-        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML, List.of());
+        YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
         YdbConnectionState connectionState = mock(YdbConnectionState.class);
         YdbStatement statement = new YdbDMLStatement(query, connectionState);
         statement.bind("$testParamA", "test");
@@ -165,7 +165,7 @@ public class YdbDMLStatementTest {
 
     @Test
     public void bindNonExistTest() {
-        YdbQuery query = new YdbQuery("test_sql", List.of("$testParam1", "$testParam2"), QueryType.DML, List.of());
+        YdbQuery query = new YdbQuery("test_sql", List.of("$testParam1", "$testParam2"), QueryType.DML);
         YdbConnectionState connectionState = mock(YdbConnectionState.class);
         YdbStatement statement = new YdbDMLStatement(query, connectionState);
 
