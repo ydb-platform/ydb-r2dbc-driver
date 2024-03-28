@@ -30,6 +30,7 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 
 import tech.ydb.io.r2dbc.type.YdbType;
+import tech.ydb.table.values.Type;
 import tech.ydb.table.values.Value;
 
 /**
@@ -38,6 +39,7 @@ import tech.ydb.table.values.Value;
 public class YdbParameterResolver {
 
     private static final HashMap<Class<?>, YdbType> CLASS_YDB_TYPE = new HashMap<>(32);
+    private static final HashMap<Type, YdbType> TYPE_YDB_TYPE = new HashMap<>(32);
 
     static {
         CLASS_YDB_TYPE.put(String.class, YdbType.TEXT);
@@ -61,6 +63,10 @@ public class YdbParameterResolver {
         CLASS_YDB_TYPE.put(LocalDateTime.class, YdbType.DATETIME);
         CLASS_YDB_TYPE.put(BigDecimal.class, YdbType.DECIMAL);
         CLASS_YDB_TYPE.put(Duration.class, YdbType.INTERVAL);
+
+        for(YdbType ydbType : YdbType.values()) {
+            TYPE_YDB_TYPE.put(ydbType.getYdbType(), ydbType);
+        }
     }
 
     private YdbParameterResolver() {
@@ -74,6 +80,10 @@ public class YdbParameterResolver {
         }
 
         return resolveClass(param.getClass()).createValue(param);
+    }
+
+    public static <T> T resolveResult(Value<?> value) {
+        return TYPE_YDB_TYPE.get(value.getType()).getObject(value);
     }
 
     public static Value<?> resolveEmptyValue(Class<?> clazz) {

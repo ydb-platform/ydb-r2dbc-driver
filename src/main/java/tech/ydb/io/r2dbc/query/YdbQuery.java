@@ -18,6 +18,7 @@ package tech.ydb.io.r2dbc.query;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import tech.ydb.io.r2dbc.statement.binding.Binding;
 
@@ -65,6 +66,12 @@ public class YdbQuery {
         return type;
     }
 
+    public List<OperationType> getOperationTypes() {
+        return sqlOperations.stream()
+                .map(SqlOperation::getOperationType)
+                .collect(Collectors.toList());
+    }
+
     @Override
     public String toString() {
         return yqlQuery;
@@ -86,14 +93,5 @@ public class YdbQuery {
     @Override
     public int hashCode() {
         return Objects.hash(yqlQuery, type, indexesArgsNames, sqlOperations);
-    }
-
-    public List<ExpressionType> getExpressionTypes() {
-        return expressionTypes;
-    }
-
-    @Override
-    public String toString() {
-        return yqlQuery;
     }
 }

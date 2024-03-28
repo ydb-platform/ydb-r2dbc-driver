@@ -19,7 +19,7 @@ package tech.ydb.io.r2dbc.state;
 import java.util.List;
 
 import reactor.core.publisher.Flux;
-import tech.ydb.io.r2dbc.query.ExpressionType;
+import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbDMLResult;
 import tech.ydb.io.r2dbc.result.YdbDDLResult;
 import tech.ydb.table.query.Params;
@@ -29,7 +29,7 @@ import tech.ydb.table.query.Params;
  */
 public interface YdbConnectionState {
 
-    Flux<YdbDMLResult> executeDataQuery(String yql, Params params, List<ExpressionType> expressionTypes);
+    Flux<YdbDMLResult> executeDataQuery(String yql, Params params, List<OperationType> expressionTypes);
 
     Flux<YdbDDLResult> executeSchemaQuery(String yql);
 }

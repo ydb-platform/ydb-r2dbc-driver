@@ -40,35 +40,35 @@ public abstract class YdbStatement implements Statement {
     }
 
     @Override
-    public Statement add() {
+    public YdbStatement add() {
         bindings.add();
 
         return this;
     }
 
     @Override
-    public Statement bind(int index, Object object) {
+    public YdbStatement bind(int index, Object object) {
         bindings.getCurrent().bind(index, object);
 
         return this;
     }
 
     @Override
-    public Statement bind(String name, Object object) {
+    public YdbStatement bind(String name, Object object) {
         bindings.getCurrent().bind(name, object);
 
         return this;
     }
 
     @Override
-    public Statement bindNull(int index, Class<?> aClass) {
+    public YdbStatement bindNull(int index, Class<?> aClass) {
         bindings.getCurrent().bindNull(index, aClass);
 
         return this;
     }
 
     @Override
-    public Statement bindNull(String name, Class<?> aClass) {
+    public YdbStatement bindNull(String name, Class<?> aClass) {
         bindings.getCurrent().bindNull(name, aClass);
 
         return this;

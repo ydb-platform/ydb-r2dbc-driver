@@ -21,7 +21,7 @@ import java.util.List;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import tech.ydb.io.r2dbc.query.ExpressionType;
+import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbDMLResult;
 import tech.ydb.io.r2dbc.result.YdbDDLResult;
 import tech.ydb.table.Session;
@@ -45,17 +45,17 @@ public final class InTransaction implements YdbConnectionState {
     }
 
     @Override
-    public Flux<YdbDMLResult> executeDataQuery(String yql, Params params, List<ExpressionType> expressionTypes) {
+    public Flux<YdbDMLResult> executeDataQuery(String yql, Params params, List<OperationType> operationTypes) {
         return Mono.fromFuture(session.executeDataQuery(yql, TxControl.id(transactionId), params))
                 .flatMapIterable(dataQueryResultResult -> {
                     List<YdbDMLResult> results = new ArrayList<>();
 
                     DataQueryResult result = dataQueryResultResult.getValue();
                     for (int index = 0; index < result.getResultSetCount(); index++) {
-                        if (expressionTypes.get(index).equals(ExpressionType.SELECT)) {
+                        if (operationTypes.get(index).equals(OperationType.SELECT)) {
                             results.add(new YdbDMLResult(result.getResultSet(index)));
                         }
-                        if (expressionTypes.get(index).equals(ExpressionType.UPDATE)) {
+                        if (operationTypes.get(index).equals(OperationType.UPDATE)) {
                             results.add(new YdbDMLResult(Flux.empty()));
                         }
                     }

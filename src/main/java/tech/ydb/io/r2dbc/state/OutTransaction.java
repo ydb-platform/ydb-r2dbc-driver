@@ -22,7 +22,7 @@ import java.util.List;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import tech.ydb.io.r2dbc.query.ExpressionType;
+import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbDMLResult;
 import tech.ydb.io.r2dbc.result.YdbDDLResult;
 import tech.ydb.io.r2dbc.util.ResultExtractor;
@@ -47,7 +47,7 @@ public final class OutTransaction implements YdbConnectionState {
     }
 
     @Override
-    public Flux<YdbDMLResult> executeDataQuery(String yql, Params params, List<ExpressionType> expressionTypes) {
+    public Flux<YdbDMLResult> executeDataQuery(String yql, Params params, List<OperationType> expressionTypes) {
         return Mono.fromFuture(tableClient.createSession(connectionTimeout))
                 .map(sessionResult -> ResultExtractor.extract(sessionResult, "Error creating session"))
                 .flatMap(session -> Mono.fromFuture(session.executeDataQuery(yql, txControl, params)))
@@ -56,10 +56,10 @@ public final class OutTransaction implements YdbConnectionState {
 
                     DataQueryResult result = dataQueryResultResult.getValue();
                     for (int index = 0; index < result.getResultSetCount(); index++) {
-                        if (expressionTypes.get(index).equals(ExpressionType.SELECT)) {
+                        if (expressionTypes.get(index).equals(OperationType.SELECT)) {
                             results.add(new YdbDMLResult(result.getResultSet(index)));
                         }
-                        if (expressionTypes.get(index).equals(ExpressionType.UPDATE)) {
+                        if (expressionTypes.get(index).equals(OperationType.UPDATE)) {
                             results.add(new YdbDMLResult(Flux.empty()));
                         }
                     }
