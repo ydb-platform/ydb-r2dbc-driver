@@ -24,6 +24,8 @@ import io.r2dbc.spi.Result;
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import tech.ydb.core.Status;
 
 /**
@@ -38,22 +40,22 @@ public class YdbDDLResult implements Result {
 
     @Override
     public Publisher<Long> getRowsUpdated() {
-        return null;
+        return Mono.just(0L);
     }
 
     @Override
     public <T> Publisher<T> map(BiFunction<Row, RowMetadata, ? extends T> biFunction) {
-        return null;
+        return Flux.empty();
     }
 
     @Override
     public Result filter(Predicate<Segment> predicate) {
-        return null;
+        return this;
     }
 
     @Override
     public <T> Publisher<T> flatMap(Function<Segment, ? extends Publisher<? extends T>> function) {
-        return null;
+        return Flux.empty();
     }
 
     public Status getStatus() {

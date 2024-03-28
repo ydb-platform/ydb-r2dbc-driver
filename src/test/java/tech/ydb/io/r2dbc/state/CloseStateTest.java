@@ -1,5 +1,6 @@
 package tech.ydb.io.r2dbc.state;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,7 @@ public class CloseStateTest {
         when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
 
         YdbConnectionState state = Close.INSTANCE;
-        state.executeDataQuery("test", Params.create())
+        state.executeDataQuery("test", Params.create(), List.of())
                 .as(StepVerifier::create)
                 .verifyError(IllegalStateException.class);
     }

@@ -9,7 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 /**
- * @author kuleshovegor
+ * @author Egor Kuleshov
  */
 public class YdbSqlParserTest {
 

@@ -20,7 +20,6 @@ import io.r2dbc.spi.Batch;
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionMetadata;
 import io.r2dbc.spi.IsolationLevel;
-import io.r2dbc.spi.Statement;
 import io.r2dbc.spi.TransactionDefinition;
 import io.r2dbc.spi.ValidationDepth;
 
@@ -29,9 +28,13 @@ import java.time.Duration;
 import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.query.YdbSqlParser;
 import tech.ydb.io.r2dbc.query.YdbQuery;
+import tech.ydb.io.r2dbc.state.OutTransaction;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
 import tech.ydb.io.r2dbc.statement.YdbDMLStatement;
 import tech.ydb.io.r2dbc.statement.YdbDDLStatement;
+import tech.ydb.io.r2dbc.statement.YdbStatement;
+import tech.ydb.table.TableClient;
+import tech.ydb.table.transaction.TxControl;
 
 /**
  * @author Kirill Kurdyukov
@@ -41,8 +44,8 @@ public class YdbConnection implements Connection {
     private volatile boolean autoCommit = true;
     private volatile YdbConnectionState state;
 
-    public YdbConnection(YdbConnectionState state) {
-        this.state = state;
+    public YdbConnection(TableClient tableClient) {
+        this.state = new OutTransaction(tableClient, TxControl.serializableRw(), Duration.ofSeconds(1));
     }
 
     @Override
@@ -62,7 +65,6 @@ public class YdbConnection implements Connection {
 
     @Override
     public Mono<Void> commitTransaction() {
-
         return null;
     }
 
@@ -77,7 +79,7 @@ public class YdbConnection implements Connection {
     }
 
     @Override
-    public Statement createStatement(String sql) {
+    public YdbStatement createStatement(String sql) {
         YdbQuery query =  YdbSqlParser.parse(sql);
 
         return switch (query.type()) {

@@ -1,7 +1,7 @@
 package tech.ydb.io.r2dbc.query;
 
 /**
- * @author kuleshovegor
+ * @author Egor Kuleshov
  */
 public enum OperationType {
     SELECT(QueryType.DML),
