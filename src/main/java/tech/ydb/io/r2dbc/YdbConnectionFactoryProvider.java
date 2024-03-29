@@ -20,6 +20,8 @@ import com.google.common.base.Preconditions;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import io.r2dbc.spi.ConnectionFactoryProvider;
 import io.r2dbc.spi.Option;
+import tech.ydb.core.grpc.BalancingSettings;
+import tech.ydb.core.grpc.GrpcCompression;
 import tech.ydb.core.grpc.GrpcTransport;
 import tech.ydb.core.grpc.GrpcTransportBuilder;
 import tech.ydb.table.TableClient;
@@ -36,16 +38,33 @@ public final class YdbConnectionFactoryProvider implements ConnectionFactoryProv
 
     private static final Option<Integer> SESSION_POOL_MIN_SIZE = Option.valueOf("sessionPoolMinSize");
     private static final Option<Integer> SESSION_POOL_MAX_SIZE = Option.valueOf("sessionPoolMaxSize");
+    private static final Option<GrpcCompression> GRPC_COMPRESSION = Option.valueOf("grpcCompression");
+    private static final Option<BalancingSettings.Policy> BALANCING_POLICY = Option.valueOf("balancingPolicy");
+    private static final Option<byte[]> SECURE_CONNECTION_CERTIFICATE = Option.valueOf("secureConnectionCertificate");
+    private static final Option<Boolean> SECURE_CONNECTION = Option.valueOf("secureConnection");
+    private static final Option<String> SA_FILE = Option.valueOf("saFile"); // TODO
 
     @Override
     public YdbConnectionFactory create(ConnectionFactoryOptions connectionFactoryOptions) {
         OptionExtractor optionExtractor = new OptionExtractor(connectionFactoryOptions);
 
+        String schema = optionExtractor.extract(ConnectionFactoryOptions.PROTOCOL);
+
         GrpcTransportBuilder grpcTransportBuilder = GrpcTransport.forHost(
-                optionExtractor.extractRequired(ConnectionFactoryOptions.HOST),
+                (schema == null ? "" : schema + "://") + optionExtractor.extractRequired(ConnectionFactoryOptions.HOST),
                 optionExtractor.extractRequired(ConnectionFactoryOptions.PORT),
                 optionExtractor.extractRequired(ConnectionFactoryOptions.DATABASE)
         );
+
+        optionExtractor.extractThenConsume(BALANCING_POLICY, policy -> grpcTransportBuilder
+                .withBalancingSettings(BalancingSettings.fromPolicy(policy)));
+        optionExtractor.extractThenConsume(GRPC_COMPRESSION, grpcTransportBuilder::withGrpcCompression);
+        optionExtractor.extractThenConsume(SECURE_CONNECTION_CERTIFICATE, grpcTransportBuilder::withSecureConnection);
+        optionExtractor.extractThenConsume(SECURE_CONNECTION, isSecure -> {
+            if (isSecure) {
+                grpcTransportBuilder.withSecureConnection();
+            }
+        });
 
         TableClient tableClient = TableClient.newClient(grpcTransportBuilder.build())
                 .sessionPoolSize(
