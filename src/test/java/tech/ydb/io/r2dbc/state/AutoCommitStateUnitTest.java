@@ -22,8 +22,8 @@ import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
 import tech.ydb.core.Result;
 import tech.ydb.core.Status;
-import tech.ydb.core.StatusCode;
 import tech.ydb.core.UnexpectedResultException;
+import tech.ydb.io.r2dbc.YdbContext;
 import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.table.Session;
 import tech.ydb.table.TableClient;
@@ -35,17 +35,20 @@ import static org.mockito.Mockito.when;
 /**
  * @author Egor Kuleshov
  */
-public class OutTransactionUnitTest {
+public class AutoCommitStateUnitTest {
+    private final TableClient client = mock(TableClient.class);
+    private final YdbContext ydbContext = new YdbContext(client);
+
     @Test
     public void executeSchemaQueryTest() {
-        TableClient client = mock(TableClient.class);
         Session session = mock(Session.class);
-        when(session.executeSchemeQuery(any())).thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
+        when(session.executeSchemeQuery(any(), any())).thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
         when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
 
-        YdbConnectionState state = new OutTransaction(client, null, null);
-        state.executeSchemaQuery("test")
-                .flux()
+        YdbConnectionState state = new AutoCommitState(ydbContext, ydbContext.getDefaultYdbTxSettings());
+        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+
+        queryExecutor.executeSchemaQuery("test")
                 .flatMap(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
                 .expectNext(0L)
@@ -54,7 +57,6 @@ public class OutTransactionUnitTest {
 
     @Test
     public void createSessionErrorTest() {
-        TableClient client = mock(TableClient.class);
         when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.fail(Status.of(StatusCode.CANCELLED))));
 
         YdbConnectionState state = new OutTransaction(client, null, null);
@@ -65,11 +67,10 @@ public class OutTransactionUnitTest {
 
     @Test
     public void executeSchemaQueryFailTest() {
-        TableClient client = mock(TableClient.class);
         Session session = mock(Session.class);
-        when(session.executeSchemeQuery(any()))
+        when(session.executeSchemeQuery(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Status.of(StatusCode.BAD_REQUEST)));
-        when(client.createSession(any()))
+        when(client.createSession(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
 
         YdbConnectionState state = new OutTransaction(client, null, null);
@@ -81,13 +82,14 @@ public class OutTransactionUnitTest {
 
     @Test
     public void executeSchemaQueryErrorTest() {
-        TableClient client = mock(TableClient.class);
         Session session = mock(Session.class);
-        when(session.executeSchemeQuery(any())).thenThrow(new RuntimeException());
+        when(session.executeSchemeQuery(any(), any())).thenThrow(new RuntimeException());
         when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
 
-        YdbConnectionState state = new OutTransaction(client, null, null);
-        state.executeSchemaQuery("test")
+        YdbConnectionState state = new AutoCommitState(ydbContext, ydbContext.getDefaultYdbTxSettings());
+        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+
+        queryExecutor.executeSchemaQuery("test")
                 .as(StepVerifier::create)
                 .verifyError(RuntimeException.class);
     }

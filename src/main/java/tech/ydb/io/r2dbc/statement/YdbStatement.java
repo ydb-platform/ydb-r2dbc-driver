@@ -18,8 +18,8 @@ package tech.ydb.io.r2dbc.statement;
 
 import io.r2dbc.spi.Statement;
 import reactor.core.publisher.Flux;
+import tech.ydb.io.r2dbc.state.QueryExecutor;
 import tech.ydb.io.r2dbc.result.YdbResult;
-import tech.ydb.io.r2dbc.state.YdbConnectionState;
 import tech.ydb.io.r2dbc.statement.binding.Bindings;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 
@@ -28,14 +28,14 @@ import tech.ydb.io.r2dbc.query.YdbQuery;
  */
 public abstract class YdbStatement implements Statement {
     protected final YdbQuery query;
-    protected final YdbConnectionState connectionState;
+    protected final QueryExecutor queryExecutor;
 
     protected final Bindings bindings;
 
-    public YdbStatement(YdbQuery query, YdbConnectionState connectionState) {
+    public YdbStatement(YdbQuery query, QueryExecutor queryExecutor) {
         this.query = query;
         this.bindings = new Bindings(query.getIndexArgNames());
-        this.connectionState = connectionState;
+        this.queryExecutor = queryExecutor;
     }
 
     @Override
