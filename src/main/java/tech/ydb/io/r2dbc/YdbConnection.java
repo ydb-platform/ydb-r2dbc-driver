@@ -20,6 +20,7 @@ import io.r2dbc.spi.Batch;
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionMetadata;
 import io.r2dbc.spi.IsolationLevel;
+import io.r2dbc.spi.Statement;
 import io.r2dbc.spi.TransactionDefinition;
 import io.r2dbc.spi.ValidationDepth;
 
@@ -28,49 +29,47 @@ import java.time.Duration;
 import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.query.YdbSqlParser;
 import tech.ydb.io.r2dbc.query.YdbQuery;
-import tech.ydb.io.r2dbc.state.OutTransaction;
-import tech.ydb.io.r2dbc.state.YdbConnectionState;
+import tech.ydb.io.r2dbc.state.AutoCommitState;
+import tech.ydb.io.r2dbc.state.QueryExecutor;
+import tech.ydb.io.r2dbc.state.QueryExecutorImpl;
+import tech.ydb.io.r2dbc.state.YdbTxSettings;
 import tech.ydb.io.r2dbc.statement.YdbDMLStatement;
 import tech.ydb.io.r2dbc.statement.YdbDDLStatement;
-import tech.ydb.io.r2dbc.statement.YdbStatement;
-import tech.ydb.table.TableClient;
-import tech.ydb.table.transaction.TxControl;
 
 /**
  * @author Kirill Kurdyukov
  */
 public class YdbConnection implements Connection {
-    private volatile IsolationLevel isolationLevel = IsolationLevel.SERIALIZABLE;
-    private volatile boolean autoCommit = true;
-    private volatile YdbConnectionState state;
+    private final QueryExecutor queryExecutor;
 
-    public YdbConnection(TableClient tableClient) {
-        this.state = new OutTransaction(tableClient, TxControl.serializableRw(), Duration.ofSeconds(1));
+    public YdbConnection(YdbContext ydbContext) {
+        this.queryExecutor = new QueryExecutorImpl(ydbContext,
+                new AutoCommitState(ydbContext, ydbContext.getDefaultYdbTxSettings()));
     }
 
     @Override
     public Mono<Void> beginTransaction() {
-        return null;
+        return queryExecutor.beginTransaction();
     }
 
     @Override
     public Mono<Void> beginTransaction(TransactionDefinition definition) {
-        return null;
+        return queryExecutor.beginTransaction(new YdbTxSettings(definition));
     }
 
     @Override
     public Mono<Void> close() {
-        return Mono.empty();
+        return queryExecutor.close();
     }
 
     @Override
     public Mono<Void> commitTransaction() {
-        return null;
+        return queryExecutor.commitTransaction();
     }
 
     @Override
     public Batch createBatch() {
-        return new YdbBatch(state);
+        throw new UnsupportedOperationException("YDB R2DBC driver is unsupported batch queries");
     }
 
     @Override
@@ -79,18 +78,18 @@ public class YdbConnection implements Connection {
     }
 
     @Override
-    public YdbStatement createStatement(String sql) {
-        YdbQuery query =  YdbSqlParser.parse(sql);
+    public Statement createStatement(String sql) {
+        YdbQuery query = YdbSqlParser.parse(sql);
 
         return switch (query.type()) {
-            case DML -> new YdbDMLStatement(query, state);
-            case DDL -> new YdbDDLStatement(query, state);
+            case DML -> new YdbDMLStatement(query, queryExecutor);
+            case DDL -> new YdbDDLStatement(query, queryExecutor);
         };
     }
 
     @Override
     public boolean isAutoCommit() {
-        return autoCommit;
+        return queryExecutor.getCurrentState().getYdbTxSettings().isAutoCommit();
     }
 
     @Override
@@ -100,7 +99,12 @@ public class YdbConnection implements Connection {
 
     @Override
     public IsolationLevel getTransactionIsolationLevel() {
-        return isolationLevel;
+        throw new UnsupportedOperationException(
+                "Standard isolation levels not supported, use getYdbTransactionIsolationLevel");
+    }
+
+    public YdbIsolationLevel getYdbTransactionIsolationLevel() {
+        return queryExecutor.getCurrentState().getYdbTxSettings().getIsolationLevel();
     }
 
     @Override
@@ -110,7 +114,7 @@ public class YdbConnection implements Connection {
 
     @Override
     public Mono<Void> rollbackTransaction() {
-        return null;
+        return queryExecutor.rollbackTransaction();
     }
 
     @Override
@@ -120,25 +124,27 @@ public class YdbConnection implements Connection {
 
     @Override
     public Mono<Void> setAutoCommit(boolean autoCommit) {
-        this.autoCommit = autoCommit;
-
-        return Mono.empty();
+        return queryExecutor.setAutoCommit(autoCommit);
     }
 
     @Override
     public Mono<Void> setLockWaitTimeout(Duration timeout) {
-        return null;
+        throw new UnsupportedOperationException("YDB R2DBC driver is unsupported lock wait timeout");
     }
 
     @Override
     public Mono<Void> setStatementTimeout(Duration timeout) {
-        return null;
+        return queryExecutor.setStatementTimeout(timeout);
     }
 
     @Override
     public Mono<Void> setTransactionIsolationLevel(IsolationLevel isolationLevel) {
-        this.isolationLevel = isolationLevel;
-        return Mono.empty();
+        throw new UnsupportedOperationException(
+                "Standard isolation levels not supported, use setYdbTransactionIsolationLevel");
+    }
+
+    public Mono<Void> setYdbTransactionIsolationLevel(YdbIsolationLevel isolationLevel) {
+        return queryExecutor.updateState(ydbTxState -> ydbTxState.withIsolationLevel(isolationLevel));
     }
 
     @Override

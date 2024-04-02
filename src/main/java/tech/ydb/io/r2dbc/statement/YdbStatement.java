@@ -16,10 +16,9 @@
 
 package tech.ydb.io.r2dbc.statement;
 
+
 import io.r2dbc.spi.Statement;
-import reactor.core.publisher.Flux;
-import tech.ydb.io.r2dbc.result.YdbResult;
-import tech.ydb.io.r2dbc.state.YdbConnectionState;
+import tech.ydb.io.r2dbc.state.QueryExecutor;
 import tech.ydb.io.r2dbc.statement.binding.Bindings;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 
@@ -28,53 +27,50 @@ import tech.ydb.io.r2dbc.query.YdbQuery;
  */
 public abstract class YdbStatement implements Statement {
     protected final YdbQuery query;
-    protected final YdbConnectionState connectionState;
+    protected final QueryExecutor queryExecutor;
 
     protected final Bindings bindings;
 
-    public YdbStatement(YdbQuery query, YdbConnectionState connectionState) {
+    public YdbStatement(YdbQuery query, QueryExecutor queryExecutor) {
         this.query = query;
         this.bindings = new Bindings(query.getIndexArgNames());
-        this.connectionState = connectionState;
+        this.queryExecutor = queryExecutor;
     }
 
     @Override
-    public YdbStatement add() {
+    public Statement add() {
         bindings.add();
 
         return this;
     }
 
     @Override
-    public YdbStatement bind(int index, Object object) {
+    public Statement bind(int index, Object object) {
         bindings.getCurrent().bind(index, object);
 
         return this;
     }
 
     @Override
-    public YdbStatement bind(String name, Object object) {
+    public Statement bind(String name, Object object) {
         bindings.getCurrent().bind(name, object);
 
         return this;
     }
 
     @Override
-    public YdbStatement bindNull(int index, Class<?> aClass) {
+    public Statement bindNull(int index, Class<?> aClass) {
         bindings.getCurrent().bindNull(index, aClass);
 
         return this;
     }
 
     @Override
-    public YdbStatement bindNull(String name, Class<?> aClass) {
+    public Statement bindNull(String name, Class<?> aClass) {
         bindings.getCurrent().bindNull(name, aClass);
 
         return this;
     }
-
-    @Override
-    public abstract Flux<YdbResult> execute();
 
     Bindings getBindings() {
         return bindings;

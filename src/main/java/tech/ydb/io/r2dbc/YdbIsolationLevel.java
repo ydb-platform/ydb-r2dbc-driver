@@ -16,28 +16,34 @@
 
 package tech.ydb.io.r2dbc;
 
-import io.r2dbc.spi.ConnectionFactory;
-import io.r2dbc.spi.ConnectionFactoryMetadata;
-import reactor.core.publisher.Mono;
+import io.r2dbc.spi.Option;
+import io.r2dbc.spi.TransactionDefinition;
 
 /**
- * @author Kirill Kurdyukov
+ * @author Egor Kuleshov
  */
-public final class YdbConnectionFactory implements ConnectionFactory {
+public enum YdbIsolationLevel implements TransactionDefinition {
 
-    private final YdbContext ydbContext;
+    SNAPSHOT_READ_ONLY,
+    STALE_READ_ONLY,
+    ONLINE_INCONSISTENT_READ_ONLY,
+    ONLINE_CONSISTENT_READ_ONLY,
+    SERIALIZABLE;
 
-    public YdbConnectionFactory(YdbContext ydbContext) {
-        this.ydbContext = ydbContext;
+    @Override
+    public  <T> T getAttribute(Option<T> option) {
+
+        if (option.equals(YdbTransactionDefinition.YDB_ISOLATION_LEVEL)) {
+            return option.cast(this);
+        }
+
+        return null;
     }
 
     @Override
-    public Mono<YdbConnection> create() {
-        return Mono.just(new YdbConnection(ydbContext));
-    }
-
-    @Override
-    public ConnectionFactoryMetadata getMetadata() {
-        return YdbConnectionFactoryMetadata.INSTANCE;
+    public String toString() {
+        return "YdbIsolationLevel{" +
+                "sql='" + this.name() + '\'' +
+                '}';
     }
 }

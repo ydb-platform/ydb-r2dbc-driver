@@ -16,10 +16,11 @@
 
 package tech.ydb.io.r2dbc.statement;
 
+import io.r2dbc.spi.Statement;
 import reactor.core.publisher.Flux;
 import tech.ydb.io.r2dbc.query.YdbQuery;
-import tech.ydb.io.r2dbc.result.YdbResult;
-import tech.ydb.io.r2dbc.state.YdbConnectionState;
+import tech.ydb.io.r2dbc.result.YdbDDLResult;
+import tech.ydb.io.r2dbc.state.QueryExecutor;
 import tech.ydb.io.r2dbc.statement.binding.Binding;
 
 /**
@@ -28,39 +29,38 @@ import tech.ydb.io.r2dbc.statement.binding.Binding;
 public class YdbDDLStatement extends YdbStatement {
     private static final String NOT_SUPPORTED_MESSAGE = "Operation not supported for YdbDDLStatement";
 
-    public YdbDDLStatement(YdbQuery query, YdbConnectionState ydbConnectionState) {
-        super(query, ydbConnectionState);
+    public YdbDDLStatement(YdbQuery query, QueryExecutor queryExecutor) {
+        super(query, queryExecutor);
     }
-
     @Override
-    public YdbStatement add() {
+    public Statement add() {
         throw new UnsupportedOperationException(NOT_SUPPORTED_MESSAGE);
     }
 
     @Override
-    public YdbStatement bind(int i, Object o) {
+    public Statement bind(int i, Object o) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_MESSAGE);
     }
 
     @Override
-    public YdbStatement bind(String s, Object o) {
+    public Statement bind(String s, Object o) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_MESSAGE);
     }
 
     @Override
-    public YdbStatement bindNull(int i, Class<?> aClass) {
+    public Statement bindNull(int i, Class<?> aClass) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_MESSAGE);
     }
 
     @Override
-    public YdbStatement bindNull(String s, Class<?> aClass) {
+    public Statement bindNull(String s, Class<?> aClass) {
         throw new UnsupportedOperationException(NOT_SUPPORTED_MESSAGE);
     }
 
     @Override
-    public Flux<YdbResult> execute() {
+    public Flux<YdbDDLResult> execute() {
         try {
-            return connectionState.executeSchemaQuery(query.getYqlQuery(Binding.empty())).flux();
+            return queryExecutor.executeSchemaQuery(query.getYqlQuery(Binding.empty()));
         } catch (Exception e) {
             return Flux.error(e);
         }

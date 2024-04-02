@@ -73,7 +73,7 @@ public final class YdbConnectionFactoryProvider implements ConnectionFactoryProv
                 )
                 .build();
 
-        return new YdbConnectionFactory(tableClient);
+        return new YdbConnectionFactory(new YdbContext(tableClient));
     }
 
     @Override
