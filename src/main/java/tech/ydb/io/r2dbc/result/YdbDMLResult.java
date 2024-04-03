@@ -32,6 +32,7 @@ import tech.ydb.table.result.ResultSetReader;
 
 public class YdbDMLResult implements Result {
     private final Flux<RowSegment> segments;
+    private final long rowsUpdated;
 
     public YdbDMLResult(ResultSetReader resultSetReader) {
         List<RowSegment> rowSegments = new ArrayList<>(resultSetReader.getRowCount());
@@ -41,15 +42,21 @@ public class YdbDMLResult implements Result {
         }
 
         segments = Flux.fromIterable(rowSegments);
+        rowsUpdated = -1L;
     }
 
-    public YdbDMLResult(Flux<RowSegment> segments) {
+    private YdbDMLResult(Flux<RowSegment> segments, long rowsUpdated) {
         this.segments = segments;
+        this.rowsUpdated = rowsUpdated;
+    }
+
+    public static YdbDMLResult updateResult() {
+        return new YdbDMLResult(Flux.empty(), 1L);
     }
 
     @Override
     public Publisher<Long> getRowsUpdated() {
-        return Mono.just(-1L);
+        return Mono.just(rowsUpdated);
     }
 
     @Override
@@ -59,7 +66,7 @@ public class YdbDMLResult implements Result {
 
     @Override
     public YdbDMLResult filter(Predicate<Segment> predicate) {
-        return new YdbDMLResult(segments.filter(predicate));
+        return new YdbDMLResult(segments.filter(predicate), rowsUpdated);
     }
 
     @Override

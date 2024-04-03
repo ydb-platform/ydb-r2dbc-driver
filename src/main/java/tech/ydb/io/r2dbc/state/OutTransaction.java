@@ -22,6 +22,7 @@ import java.util.List;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import tech.ydb.core.UnexpectedResultException;
 import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbDMLResult;
 import tech.ydb.io.r2dbc.result.YdbDDLResult;
@@ -49,30 +50,38 @@ public final class OutTransaction implements YdbConnectionState {
     @Override
     public Flux<YdbDMLResult> executeDataQuery(String yql, Params params, List<OperationType> expressionTypes) {
         return Mono.fromFuture(tableClient.createSession(connectionTimeout))
-                .map(sessionResult -> ResultExtractor.extract(sessionResult, "Error creating session"))
+                .flatMap(sessionResult -> ResultExtractor.extract(sessionResult, "Error creating session"))
                 .flatMap(session -> Mono.fromFuture(session.executeDataQuery(yql, txControl, params)))
-                .flatMapIterable(dataQueryResultResult -> {
-                    List<YdbDMLResult> results = new ArrayList<>();
+                .flux()
+                .concatMap(dataQueryResult -> {
+                    Mono<DataQueryResult> dataQueryResultMono = ResultExtractor.extract(dataQueryResult);
 
-                    DataQueryResult result = dataQueryResultResult.getValue();
-                    for (int index = 0; index < result.getResultSetCount(); index++) {
-                        if (expressionTypes.get(index).equals(OperationType.SELECT)) {
-                            results.add(new YdbDMLResult(result.getResultSet(index)));
+                    return dataQueryResultMono.flatMapMany(result -> {
+                        List<YdbDMLResult> results = new ArrayList<>();
+                        for (int index = 0; index < result.getResultSetCount(); index++) {
+                            if (expressionTypes.get(index).equals(OperationType.SELECT)) {
+                                results.add(new YdbDMLResult(result.getResultSet(index)));
+                            }
+                            if (expressionTypes.get(index).equals(OperationType.UPDATE)) {
+                                results.add(YdbDMLResult.updateResult());
+                            }
                         }
-                        if (expressionTypes.get(index).equals(OperationType.UPDATE)) {
-                            results.add(new YdbDMLResult(Flux.empty()));
-                        }
-                    }
-
-                    return results;
+                        return Flux.fromIterable(results);
+                    });
                 });
     }
 
     @Override
-    public Flux<YdbDDLResult> executeSchemaQuery(String yql) {
+    public Mono<YdbDDLResult> executeSchemaQuery(String yql) {
         return Mono.fromFuture(tableClient.createSession(connectionTimeout))
-                .map(sessionResult -> ResultExtractor.extract(sessionResult, "Error creating session"))
+                .flatMap(sessionResult -> ResultExtractor.extract(sessionResult, "Error creating session"))
                 .flatMap(session -> Mono.fromFuture(session.executeSchemeQuery(yql)))
-                .map(YdbDDLResult::new).flux();
+                .flatMap(status -> {
+                    if (!status.isSuccess()) {
+                        return Mono.error(new UnexpectedResultException("Schema query failed", status));
+                    }
+
+                    return Mono.just(new YdbDDLResult(status));
+                });
     }
 }

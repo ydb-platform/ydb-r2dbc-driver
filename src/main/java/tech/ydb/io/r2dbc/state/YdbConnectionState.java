@@ -19,6 +19,7 @@ package tech.ydb.io.r2dbc.state;
 import java.util.List;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbDMLResult;
 import tech.ydb.io.r2dbc.result.YdbDDLResult;
@@ -31,5 +32,5 @@ public interface YdbConnectionState {
 
     Flux<YdbDMLResult> executeDataQuery(String yql, Params params, List<OperationType> expressionTypes);
 
-    Flux<YdbDDLResult> executeSchemaQuery(String yql);
+    Mono<YdbDDLResult> executeSchemaQuery(String yql);
 }

@@ -16,6 +16,7 @@
 
 package tech.ydb.io.r2dbc.util;
 
+import reactor.core.publisher.Mono;
 import tech.ydb.core.Result;
 import tech.ydb.core.UnexpectedResultException;
 
@@ -27,11 +28,19 @@ public class ResultExtractor {
     private ResultExtractor() {
     }
 
-    public static  <T> T extract(Result<T> result, String failMessage) {
+    public static  <T> Mono<T> extract(Result<T> result, String failMessage) {
         if (result.isSuccess()) {
-            return result.getValue();
+            return Mono.just(result.getValue());
         }
 
-        throw new UnexpectedResultException(failMessage, result.getStatus());
+        return Mono.error(new UnexpectedResultException(failMessage, result.getStatus()));
+    }
+
+    public static  <T> Mono<T> extract(Result<T> result) {
+        try {
+            return Mono.just(result.getValue());
+        } catch (UnexpectedResultException e) {
+            return Mono.error(e);
+        }
     }
 }

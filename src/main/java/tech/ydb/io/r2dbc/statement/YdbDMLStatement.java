@@ -34,7 +34,6 @@ public class YdbDMLStatement extends YdbStatement {
         bindings.getCurrent().validate();
 
         return Flux.fromIterable(bindings)
-                .flatMap(binding -> connectionState.executeDataQuery(query.getYqlQuery(bindings.getCurrent()),
-                        bindings.getCurrent().toParams(), query.getOperationTypes()));
+                .flatMap(binding -> connectionState.executeDataQuery(query.getYqlQuery(binding), binding.toParams(), query.getOperationTypes()));
     }
 }
