@@ -18,7 +18,7 @@ package tech.ydb.io.r2dbc.statement;
 
 import reactor.core.publisher.Flux;
 import tech.ydb.io.r2dbc.query.YdbQuery;
-import tech.ydb.io.r2dbc.result.YdbDDLResult;
+import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
 import tech.ydb.io.r2dbc.statement.binding.Binding;
 
@@ -31,6 +31,7 @@ public class YdbDDLStatement extends YdbStatement {
     public YdbDDLStatement(YdbQuery query, YdbConnectionState ydbConnectionState) {
         super(query, ydbConnectionState);
     }
+
     @Override
     public YdbStatement add() {
         throw new UnsupportedOperationException(NOT_SUPPORTED_MESSAGE);
@@ -56,10 +57,8 @@ public class YdbDDLStatement extends YdbStatement {
         throw new UnsupportedOperationException(NOT_SUPPORTED_MESSAGE);
     }
 
-
-
     @Override
-    public Flux<YdbDDLResult> execute() {
+    public Flux<YdbResult> execute() {
         try {
             return connectionState.executeSchemaQuery(query.getYqlQuery(Binding.empty())).flux();
         } catch (Exception e) {

@@ -16,9 +16,9 @@
 
 package tech.ydb.io.r2dbc.statement;
 
-import io.r2dbc.spi.Result;
 import reactor.core.publisher.Flux;
 import tech.ydb.io.r2dbc.query.YdbQuery;
+import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
 
 /**
@@ -30,10 +30,13 @@ public class YdbDMLStatement extends YdbStatement {
     }
 
     @Override
-    public Flux<? extends Result> execute() {
+    public Flux<YdbResult> execute() {
         bindings.getCurrent().validate();
 
         return Flux.fromIterable(bindings)
-                .flatMap(binding -> connectionState.executeDataQuery(query.getYqlQuery(binding), binding.toParams(), query.getOperationTypes()));
+                .flatMap(binding -> connectionState.executeDataQuery(
+                        query.getYqlQuery(binding),
+                        binding.toParams(),
+                        query.getOperationTypes()));
     }
 }

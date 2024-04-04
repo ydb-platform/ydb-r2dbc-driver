@@ -30,53 +30,68 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.ydb.table.result.ResultSetReader;
 
-public class YdbDMLResult implements Result {
+/**
+ * @author Egor Kuleshov
+ */
+public class YdbResult implements Result {
+    private static final long DEFAULT_SELECT_ROWS_UPDATED = -1L;
+    private static final long DEFAULT_UPDATE_ROWS_UPDATED = 1L;
+    private static final long DEFAULT_DDL_ROWS_UPDATED = 0L;
+
     private final Flux<RowSegment> segments;
     private final long rowsUpdated;
 
-    public YdbDMLResult(ResultSetReader resultSetReader) {
+    private YdbResult(Flux<RowSegment> segments, long rowsUpdated) {
+        this.segments = segments;
+        this.rowsUpdated = rowsUpdated;
+    }
+
+    public static YdbResult selectResult(ResultSetReader resultSetReader) {
         List<RowSegment> rowSegments = new ArrayList<>(resultSetReader.getRowCount());
 
         for (int index = 0; index < resultSetReader.getRowCount(); index++) {
             rowSegments.add(new RowSegment(new YdbRow(resultSetReader, index)));
         }
 
-        segments = Flux.fromIterable(rowSegments);
-        rowsUpdated = -1L;
+        return new YdbResult(Flux.fromIterable(rowSegments), DEFAULT_SELECT_ROWS_UPDATED);
     }
 
-    private YdbDMLResult(Flux<RowSegment> segments, long rowsUpdated) {
-        this.segments = segments;
-        this.rowsUpdated = rowsUpdated;
+    public static YdbResult updateResult() {
+        return new YdbResult(Flux.empty(), DEFAULT_UPDATE_ROWS_UPDATED);
     }
 
-    public static YdbDMLResult updateResult() {
-        return new YdbDMLResult(Flux.empty(), 1L);
+    public static YdbResult ddlResult() {
+        return new YdbResult(Flux.empty(), DEFAULT_DDL_ROWS_UPDATED);
     }
 
+    /**
+     * YDB do not support rows updated and return default value.
+     *
+     * @return default value rows updated by query type
+     */
     @Override
-    public Publisher<Long> getRowsUpdated() {
+    public Mono<Long> getRowsUpdated() {
         return Mono.just(rowsUpdated);
     }
 
     @Override
-    public <T> Publisher<T> map(BiFunction<Row, RowMetadata, ? extends T> biFunction) {
+    public <T> Flux<T> map(BiFunction<Row, RowMetadata, ? extends T> biFunction) {
         return segments.map(rowSegment -> biFunction.apply(rowSegment.row(), rowSegment.row.getMetadata()));
     }
 
     @Override
-    public YdbDMLResult filter(Predicate<Segment> predicate) {
-        return new YdbDMLResult(segments.filter(predicate), rowsUpdated);
+    public YdbResult filter(Predicate<Segment> predicate) {
+        return new YdbResult(segments.filter(predicate), rowsUpdated);
     }
 
     @Override
-    public <T> Publisher<T> flatMap(Function<Segment, ? extends Publisher<? extends T>> function) {
+    public <T> Flux<T> flatMap(Function<Segment, ? extends Publisher<? extends T>> function) {
         return segments.flatMap(function);
     }
 
     private static class RowSegment implements Result.RowSegment {
 
-        final YdbRow row;
+        private final YdbRow row;
 
         RowSegment(YdbRow row) {
             this.row = row;

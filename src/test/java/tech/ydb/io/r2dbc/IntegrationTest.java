@@ -16,16 +16,11 @@
 
 package tech.ydb.io.r2dbc;
 
-import java.time.Duration;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import reactor.test.StepVerifier;
-import tech.ydb.core.Status;
-import tech.ydb.io.r2dbc.result.YdbDDLResult;
-import tech.ydb.io.r2dbc.state.OutTransaction;
-import tech.ydb.table.TableClient;
-import tech.ydb.table.transaction.TxControl;
+import tech.ydb.io.r2dbc.helper.R2dbcConnectionExtension;
+import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.test.junit5.YdbHelperExtension;
 
 /**
@@ -35,26 +30,65 @@ public class IntegrationTest {
     @RegisterExtension
     private static final YdbHelperExtension ydb = new YdbHelperExtension();
 
+    @RegisterExtension
+    private final R2dbcConnectionExtension r2dbc = new R2dbcConnectionExtension(ydb);
+
     @Test
-    public void test() {
-        TableClient tableClient = TableClient.newClient(ydb.createTransport())
-                .sessionPoolSize(1, 2)
-                .build();
-
-        OutTransaction outTransaction = new OutTransaction(tableClient, TxControl.serializableRw(), Duration.ofSeconds(1));
-
-        outTransaction.executeSchemaQuery("create table t1 (id Int32, value Int32, primary key (id));")
-                .map(YdbDDLResult::getStatus)
-                .map(Status::getCode)
+    public void createAndDropTable() {
+        r2dbc.connection().createStatement("create table t1 (id Int32, value Int32, primary key (id));")
+                .execute()
+                .flatMap(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
-                .expectNext(Status.SUCCESS.getCode())
+                .expectNext(0L)
                 .verifyComplete();
 
-        outTransaction.executeSchemaQuery("drop table t1;")
-                .map(YdbDDLResult::getStatus)
-                .map(Status::getCode)
+        r2dbc.connection().createStatement("drop table t1")
+                .execute()
+                .flatMap(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
-                .expectNext(Status.SUCCESS.getCode())
+                .expectNext(0L)
+                .verifyComplete();
+    }
+
+    @Test
+    public void doubleInsertAndSelectTable() {
+        r2dbc.connection().createStatement("create table t1 (id Int32, test_value TEXT, primary key (id));")
+                .execute()
+                .flatMap(YdbResult::getRowsUpdated)
+                .as(StepVerifier::create)
+                .expectNext(0L)
+                .verifyComplete();
+
+        r2dbc.connection().createStatement("upsert into t1 (id, test_value) values (?, ?);")
+                .bind(0, 123)
+                .bind(1, "test_1")
+                .add()
+                .bind(0, 124)
+                .bind(1, "test_2")
+                .execute()
+                .flatMap(YdbResult::getRowsUpdated)
+                .as(StepVerifier::create)
+                .expectNext(1L)
+                .expectNext(1L)
+                .verifyComplete();
+
+        r2dbc.connection().createStatement(
+                        "select * from t1 order by id asc;" +
+                                "select * from t1 order by id desc;")
+                .execute()
+                .flatMap(ydbResult -> ydbResult.map((row, rowMetadata) -> row.get("id")))
+                .as(StepVerifier::create)
+                .expectNext(123)
+                .expectNext(124)
+                .expectNext(124)
+                .expectNext(123)
+                .verifyComplete();
+
+        r2dbc.connection().createStatement("drop table t1")
+                .execute()
+                .flatMap(YdbResult::getRowsUpdated)
+                .as(StepVerifier::create)
+                .expectNext(0L)
                 .verifyComplete();
     }
 }

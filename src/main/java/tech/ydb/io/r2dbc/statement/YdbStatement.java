@@ -16,10 +16,9 @@
 
 package tech.ydb.io.r2dbc.statement;
 
-
-import io.r2dbc.spi.Result;
 import io.r2dbc.spi.Statement;
 import reactor.core.publisher.Flux;
+import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
 import tech.ydb.io.r2dbc.statement.binding.Bindings;
 import tech.ydb.io.r2dbc.query.YdbQuery;
@@ -75,7 +74,7 @@ public abstract class YdbStatement implements Statement {
     }
 
     @Override
-    public abstract Flux<? extends Result> execute();
+    public abstract Flux<YdbResult> execute();
 
     Bindings getBindings() {
         return bindings;

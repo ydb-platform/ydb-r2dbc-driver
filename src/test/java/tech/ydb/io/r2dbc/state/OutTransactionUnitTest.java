@@ -24,7 +24,7 @@ import tech.ydb.core.Result;
 import tech.ydb.core.Status;
 import tech.ydb.core.StatusCode;
 import tech.ydb.core.UnexpectedResultException;
-import tech.ydb.io.r2dbc.result.YdbDDLResult;
+import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.table.Session;
 import tech.ydb.table.TableClient;
 
@@ -45,9 +45,10 @@ public class OutTransactionUnitTest {
 
         YdbConnectionState state = new OutTransaction(client, null, null);
         state.executeSchemaQuery("test")
-                .map(YdbDDLResult::getStatus)
+                .flux()
+                .flatMap(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
-                .expectNext(Status.SUCCESS)
+                .expectNext(0L)
                 .verifyComplete();
     }
 
@@ -73,7 +74,7 @@ public class OutTransactionUnitTest {
 
         YdbConnectionState state = new OutTransaction(client, null, null);
         state.executeSchemaQuery("test")
-                .map(YdbDDLResult::getRowsUpdated)
+                .map(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
                 .verifyError(UnexpectedResultException.class);
     }

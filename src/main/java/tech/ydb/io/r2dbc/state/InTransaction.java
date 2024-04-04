@@ -23,8 +23,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.ydb.core.UnexpectedResultException;
 import tech.ydb.io.r2dbc.query.OperationType;
-import tech.ydb.io.r2dbc.result.YdbDMLResult;
-import tech.ydb.io.r2dbc.result.YdbDDLResult;
+import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.table.Session;
 import tech.ydb.table.query.DataQueryResult;
 import tech.ydb.table.query.Params;
@@ -46,7 +45,7 @@ public final class InTransaction implements YdbConnectionState {
     }
 
     @Override
-    public Flux<YdbDMLResult> executeDataQuery(String yql, Params params, List<OperationType> operationTypes) {
+    public Flux<YdbResult> executeDataQuery(String yql, Params params, List<OperationType> operationTypes) {
         return Mono.fromFuture(session.executeDataQuery(yql, TxControl.id(transactionId), params))
                 .flatMapMany(dataQueryResultResult -> {
                     DataQueryResult result;
@@ -56,13 +55,13 @@ public final class InTransaction implements YdbConnectionState {
                         return Flux.error(ex);
                     }
 
-                    List<YdbDMLResult> results = new ArrayList<>();
+                    List<YdbResult> results = new ArrayList<>();
                     for (int index = 0; index < result.getResultSetCount(); index++) {
                         if (operationTypes.get(index).equals(OperationType.SELECT)) {
-                            results.add(new YdbDMLResult(result.getResultSet(index)));
+                            results.add(YdbResult.selectResult(result.getResultSet(index)));
                         }
                         if (operationTypes.get(index).equals(OperationType.UPDATE)) {
-                            results.add(YdbDMLResult.updateResult());
+                            results.add(YdbResult.updateResult());
                         }
                     }
 
@@ -71,7 +70,7 @@ public final class InTransaction implements YdbConnectionState {
     }
 
     @Override
-    public Mono<YdbDDLResult> executeSchemaQuery(String yql) {
+    public Mono<YdbResult> executeSchemaQuery(String yql) {
         return Mono.error(new IllegalStateException(SCHEME_QUERY_INSIDE_TRANSACTION));
     }
 }
