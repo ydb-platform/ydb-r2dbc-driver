@@ -79,8 +79,8 @@ public class YdbParameterResolver {
         return resolveClass(param.getClass()).createValue(param);
     }
 
-    public static <T> T resolveResult(Value<?> value) {
-        return TYPE_YDB_TYPE.get(value.getType()).getObject(value);
+    public static <T> T resolveResult(Value<?> value, Class<T> type) {
+        return type.cast(TYPE_YDB_TYPE.get(value.getType()).getObject(value));
     }
 
     public static Value<?> resolveEmptyValue(Class<?> clazz) {

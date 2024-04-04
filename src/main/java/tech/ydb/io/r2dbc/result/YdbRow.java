@@ -42,7 +42,7 @@ public final class YdbRow implements Row {
     public <T> T get(int index, Class<T> type) {
         resultSetReader.setRowIndex(rowIndex);
         if (resultSetReader.getColumn(index).getValue().asOptional().isPresent()) {
-            return YdbParameterResolver.resolveResult(resultSetReader.getColumn(index).getValue().asOptional().get());
+            return YdbParameterResolver.resolveResult(resultSetReader.getColumn(index).getValue().asOptional().get(), type);
         }
 
         return null;
