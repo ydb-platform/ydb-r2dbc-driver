@@ -48,9 +48,9 @@ public class TypesIntegrationTest {
                 new Object[]{YdbType.FLOAT, (float) 1.5},
                 new Object[]{YdbType.DOUBLE, 1.5},
                 new Object[]{YdbType.TEXT, "test"},
-                new Object[]{YdbType.DATE, LocalDate.now()},
+                new Object[]{YdbType.DATE, LocalDate.ofYearDay(2024, 1)},
                 new Object[]{YdbType.DATETIME, LocalDateTime.of(2024, 2, 3, 4, 5, 6)},
-                new Object[]{YdbType.TIMESTAMP, Instant.now()},
+                new Object[]{YdbType.TIMESTAMP, Instant.ofEpochMilli(12345)},
                 new Object[]{YdbType.INTERVAL, Duration.ofSeconds(1)}
         );
     }
@@ -61,7 +61,7 @@ public class TypesIntegrationTest {
     @RegisterExtension
     private final R2dbcConnectionExtension r2dbc = new R2dbcConnectionExtension(ydb);
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "with {0}")
     @EnumSource(value = YdbType.class, mode = EnumSource.Mode.EXCLUDE, names = {
             "UUID",
             "TZ_DATE",
@@ -99,7 +99,7 @@ public class TypesIntegrationTest {
                 .verifyComplete();
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "with {0}")
     @MethodSource("values")
     public void createInsertSelectValue(YdbType type, Object value) {
         r2dbc.connection().createStatement("create table t1_" + type + " (id INT32, test_value " + type.getYdbType() + ", primary key (id));")
