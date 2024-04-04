@@ -34,9 +34,9 @@ import tech.ydb.table.result.ResultSetReader;
  * @author Egor Kuleshov
  */
 public class YdbResult implements Result {
+    public static final YdbResult UPDATE_RESULT = new YdbResult(Flux.empty(), 1L);
+    public static final YdbResult DDL_RESULT = new YdbResult(Flux.empty(), 0L);
     private static final long DEFAULT_SELECT_ROWS_UPDATED = -1L;
-    private static final long DEFAULT_UPDATE_ROWS_UPDATED = 1L;
-    private static final long DEFAULT_DDL_ROWS_UPDATED = 0L;
 
     private final Flux<RowSegment> segments;
     private final long rowsUpdated;
@@ -46,22 +46,15 @@ public class YdbResult implements Result {
         this.rowsUpdated = rowsUpdated;
     }
 
-    public static YdbResult selectResult(ResultSetReader resultSetReader) {
+    public YdbResult(ResultSetReader resultSetReader) {
         List<RowSegment> rowSegments = new ArrayList<>(resultSetReader.getRowCount());
 
         for (int index = 0; index < resultSetReader.getRowCount(); index++) {
             rowSegments.add(new RowSegment(new YdbRow(resultSetReader, index)));
         }
 
-        return new YdbResult(Flux.fromIterable(rowSegments), DEFAULT_SELECT_ROWS_UPDATED);
-    }
-
-    public static YdbResult updateResult() {
-        return new YdbResult(Flux.empty(), DEFAULT_UPDATE_ROWS_UPDATED);
-    }
-
-    public static YdbResult ddlResult() {
-        return new YdbResult(Flux.empty(), DEFAULT_DDL_ROWS_UPDATED);
+        this.segments = Flux.fromIterable(rowSegments);
+        this.rowsUpdated = DEFAULT_SELECT_ROWS_UPDATED;
     }
 
     /**

@@ -56,12 +56,12 @@ public final class InTransaction implements YdbConnectionState {
                     }
 
                     List<YdbResult> results = new ArrayList<>();
-                    for (int index = 0; index < result.getResultSetCount(); index++) {
+                    for (int index = 0; index < operationTypes.size(); index++) {
                         if (operationTypes.get(index).equals(OperationType.SELECT)) {
-                            results.add(YdbResult.selectResult(result.getResultSet(index)));
+                            results.add(new YdbResult(result.getResultSet(index)));
                         }
                         if (operationTypes.get(index).equals(OperationType.UPDATE)) {
-                            results.add(YdbResult.updateResult());
+                            results.add(YdbResult.UPDATE_RESULT);
                         }
                     }
 

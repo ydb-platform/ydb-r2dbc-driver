@@ -47,7 +47,7 @@ public final class OutTransaction implements YdbConnectionState {
     }
 
     @Override
-    public Flux<YdbResult> executeDataQuery(String yql, Params params, List<OperationType> expressionTypes) {
+    public Flux<YdbResult> executeDataQuery(String yql, Params params, List<OperationType> operationTypes) {
         return Mono.fromFuture(tableClient.createSession(connectionTimeout))
                 .flatMap(sessionResult -> ResultExtractor.extract(sessionResult, "Error creating session"))
                 .flatMap(session -> Mono.fromFuture(session.executeDataQuery(yql, txControl, params)))
@@ -57,12 +57,12 @@ public final class OutTransaction implements YdbConnectionState {
 
                     return dataQueryResultMono.flatMapMany(result -> {
                         List<YdbResult> results = new ArrayList<>();
-                        for (int index = 0; index < expressionTypes.size(); index++) {
-                            if (expressionTypes.get(index).equals(OperationType.SELECT)) {
-                                results.add(YdbResult.selectResult(result.getResultSet(index)));
+                        for (int index = 0; index < operationTypes.size(); index++) {
+                            if (operationTypes.get(index).equals(OperationType.SELECT)) {
+                                results.add(new YdbResult(result.getResultSet(index)));
                             }
-                            if (expressionTypes.get(index).equals(OperationType.UPDATE)) {
-                                results.add(YdbResult.updateResult());
+                            if (operationTypes.get(index).equals(OperationType.UPDATE)) {
+                                results.add(YdbResult.UPDATE_RESULT);
                             }
                         }
 
@@ -81,7 +81,7 @@ public final class OutTransaction implements YdbConnectionState {
                         return Mono.error(new UnexpectedResultException("Schema query failed", status));
                     }
 
-                    return Mono.just(YdbResult.ddlResult());
+                    return Mono.just(YdbResult.DDL_RESULT);
                 });
     }
 }
