@@ -16,8 +16,11 @@
 
 package tech.ydb.io.r2dbc;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 import tech.ydb.io.r2dbc.helper.R2dbcConnectionExtension;
 import tech.ydb.io.r2dbc.result.YdbResult;
@@ -27,22 +30,26 @@ import tech.ydb.test.junit5.YdbHelperExtension;
  * @author Egor Kuleshov
  */
 public class IntegrationTest {
+    private static final String CREATE_TABLE = "create table t1 (id Int32, value text, primary key (id));";
+    private static final String DROP_TABLE = "drop table t1;";
     @RegisterExtension
     private static final YdbHelperExtension ydb = new YdbHelperExtension();
-
     @RegisterExtension
     private final R2dbcConnectionExtension r2dbc = new R2dbcConnectionExtension(ydb);
 
-    @Test
-    public void createAndDropTable() {
-        r2dbc.connection().createStatement("create table t1 (id Int32, value Int32, primary key (id));")
+    @BeforeEach
+    public void createTable() {
+        r2dbc.connection().createStatement(CREATE_TABLE)
                 .execute()
                 .flatMap(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
                 .expectNext(0L)
                 .verifyComplete();
+    }
 
-        r2dbc.connection().createStatement("drop table t1")
+    @AfterEach
+    public void dropTable() {
+        r2dbc.connection().createStatement(DROP_TABLE)
                 .execute()
                 .flatMap(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
@@ -51,21 +58,12 @@ public class IntegrationTest {
     }
 
     @Test
-    public void doubleInsertAndSelectTable() {
-        r2dbc.connection().createStatement("create table t1 (id Int32, test_value TEXT, primary key (id));")
-                .execute()
-                .flatMap(YdbResult::getRowsUpdated)
-                .as(StepVerifier::create)
-                .expectNext(0L)
-                .verifyComplete();
+    public void createAndDropTable() {
+    }
 
-        r2dbc.connection().createStatement("upsert into t1 (id, test_value) values (?, ?);")
-                .bind(0, 123)
-                .bind(1, "test_1")
-                .add()
-                .bind(0, 124)
-                .bind(1, "test_2")
-                .execute()
+    @Test
+    public void doubleSelectTable() {
+        upsertData(r2dbc.connection())
                 .flatMap(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
                 .expectNext(1L)
@@ -83,12 +81,46 @@ public class IntegrationTest {
                 .expectNext(124)
                 .expectNext(123)
                 .verifyComplete();
+    }
 
-        r2dbc.connection().createStatement("drop table t1")
-                .execute()
+    @Test
+    public void doubleSelectAndUpsertTable() {
+        upsertData(r2dbc.connection())
                 .flatMap(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
-                .expectNext(0L)
+                .expectNext(1L)
+                .expectNext(1L)
                 .verifyComplete();
+
+        r2dbc.connection().createStatement(
+                        "select * from t1 order by id asc;" +
+                                "upsert into t1 (id, value) values (125, 'test');" +
+                                "select * from t1 order by id desc;")
+                .execute()
+                .as(StepVerifier::create)
+                .expectNextCount(3)
+                .verifyComplete();
+    }
+
+    @Test
+    public void UpsertAndSelectTable() {
+        upsertData(r2dbc.connection())
+                .thenMany(r2dbc.connection().createStatement("select * from t1 order by id asc;")
+                        .execute())
+                .flatMap(ydbResult -> ydbResult.map((row, rowMetadata) -> row.get("id")))
+                .as(StepVerifier::create)
+                .expectNext(123)
+                .expectNext(124)
+                .verifyComplete();
+    }
+
+    private static Flux<YdbResult> upsertData(YdbConnection connection) {
+        return connection.createStatement("upsert into t1 (id, value) values (?, ?);")
+                .bind(0, 123)
+                .bind(1, "test_1")
+                .add()
+                .bind(0, 124)
+                .bind(1, "test_2")
+                .execute();
     }
 }

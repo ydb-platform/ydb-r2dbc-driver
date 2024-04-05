@@ -50,25 +50,30 @@ public final class OutTransaction implements YdbConnectionState {
     public Flux<YdbResult> executeDataQuery(String yql, Params params, List<OperationType> operationTypes) {
         return Mono.fromFuture(tableClient.createSession(connectionTimeout))
                 .flatMap(sessionResult -> ResultExtractor.extract(sessionResult, "Error creating session"))
-                .flatMap(session -> Mono.fromFuture(session.executeDataQuery(yql, txControl, params)))
-                .flux()
-                .concatMap(dataQueryResult -> {
-                    Mono<DataQueryResult> dataQueryResultMono = ResultExtractor.extract(dataQueryResult);
+                .flatMapMany(session ->
+                        Mono.fromFuture(session.executeDataQuery(yql, txControl, params))
+                                .flatMapMany(dataQueryResult -> {
+                                    Mono<DataQueryResult> dataQueryResultMono =
+                                            ResultExtractor.extract(dataQueryResult);
 
-                    return dataQueryResultMono.flatMapMany(result -> {
-                        List<YdbResult> results = new ArrayList<>();
-                        for (int index = 0; index < operationTypes.size(); index++) {
-                            if (operationTypes.get(index).equals(OperationType.SELECT)) {
-                                results.add(new YdbResult(result.getResultSet(index)));
-                            }
-                            if (operationTypes.get(index).equals(OperationType.UPDATE)) {
-                                results.add(YdbResult.UPDATE_RESULT);
-                            }
-                        }
+                                    return dataQueryResultMono.flatMapMany(result -> {
+                                        List<YdbResult> results = new ArrayList<>();
+                                        for (int opIndex = 0, resSetIndex = 0; opIndex < operationTypes.size(); opIndex++) {
+                                            results.add(switch (operationTypes.get(opIndex)) {
+                                                case SELECT -> new YdbResult(result.getResultSet(resSetIndex++));
+                                                case UPDATE -> YdbResult.UPDATE_RESULT;
+                                                case SCHEME ->
+                                                        throw new IllegalStateException("DDL operation not support in" +
+                                                                " " +
+                                                                "executeDataQuery");
+                                            });
+                                        }
 
-                        return Flux.fromIterable(results);
-                    });
-                });
+                                        return Flux.fromIterable(results);
+                                    });
+                                })
+                                .doFinally((signalType) -> session.close())
+                );
     }
 
     @Override

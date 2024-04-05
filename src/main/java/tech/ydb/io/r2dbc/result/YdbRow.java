@@ -20,6 +20,7 @@ import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
 import tech.ydb.io.r2dbc.parameter.YdbParameterResolver;
 import tech.ydb.table.result.ResultSetReader;
+import tech.ydb.table.result.ValueReader;
 
 /**
  * @author Kirill Kurdyukov
@@ -41,8 +42,9 @@ public final class YdbRow implements Row {
     @Override
     public <T> T get(int index, Class<T> type) {
         resultSetReader.setRowIndex(rowIndex);
-        if (resultSetReader.getColumn(index).getValue().asOptional().isPresent()) {
-            return YdbParameterResolver.resolveResult(resultSetReader.getColumn(index).getValue().asOptional().get(), type);
+        ValueReader valueReader = resultSetReader.getColumn(index);
+        if (valueReader.getValue().asOptional().isPresent()) {
+            return YdbParameterResolver.resolveResult(valueReader, type);
         }
 
         return null;

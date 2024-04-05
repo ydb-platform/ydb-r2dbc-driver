@@ -21,9 +21,9 @@ import java.util.List;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import tech.ydb.core.UnexpectedResultException;
 import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbResult;
+import tech.ydb.io.r2dbc.util.ResultExtractor;
 import tech.ydb.table.Session;
 import tech.ydb.table.query.DataQueryResult;
 import tech.ydb.table.query.Params;
@@ -47,25 +47,26 @@ public final class InTransaction implements YdbConnectionState {
     @Override
     public Flux<YdbResult> executeDataQuery(String yql, Params params, List<OperationType> operationTypes) {
         return Mono.fromFuture(session.executeDataQuery(yql, TxControl.id(transactionId), params))
-                .flatMapMany(dataQueryResultResult -> {
-                    DataQueryResult result;
-                    try {
-                        result = dataQueryResultResult.getValue();
-                    } catch (UnexpectedResultException ex) {
-                        return Flux.error(ex);
-                    }
+                .flatMapMany(dataQueryResult -> {
+                    Mono<DataQueryResult> dataQueryResultMono = ResultExtractor.extract(dataQueryResult);
 
-                    List<YdbResult> results = new ArrayList<>();
-                    for (int index = 0; index < operationTypes.size(); index++) {
-                        if (operationTypes.get(index).equals(OperationType.SELECT)) {
-                            results.add(new YdbResult(result.getResultSet(index)));
+                    return dataQueryResultMono.flatMapMany(result -> {
+                        List<YdbResult> results = new ArrayList<>();
+                        for (int opIndex = 0, resSetIndex = 0; opIndex < operationTypes.size(); opIndex++) {
+                            results.add(switch (operationTypes.get(opIndex)) {
+                                case SELECT -> {
+                                    resSetIndex++;
+                                    yield new YdbResult(result.getResultSet(resSetIndex));
+                                }
+                                case UPDATE -> YdbResult.UPDATE_RESULT;
+                                case SCHEME ->
+                                        throw new IllegalStateException("DDL operation not support in " +
+                                                "executeDataQuery");
+                            });
                         }
-                        if (operationTypes.get(index).equals(OperationType.UPDATE)) {
-                            results.add(YdbResult.UPDATE_RESULT);
-                        }
-                    }
 
-                    return Flux.fromIterable(results);
+                        return Flux.fromIterable(results);
+                    });
                 });
     }
 
