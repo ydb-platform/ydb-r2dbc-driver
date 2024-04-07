@@ -14,31 +14,36 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc;
+package tech.ydb.io.r2dbc.parameter;
 
-import io.r2dbc.spi.ConnectionFactory;
-import io.r2dbc.spi.ConnectionFactoryMetadata;
-import reactor.core.publisher.Mono;
-import tech.ydb.table.TableClient;
+import io.r2dbc.spi.Parameter;
+import io.r2dbc.spi.Type;
+import tech.ydb.io.r2dbc.type.YdbType;
 
 /**
- * @author Kirill Kurdyukov
+ * @author Egor Kuleshov
  */
-public final class YdbConnectionFactory implements ConnectionFactory {
+public class YdbParameter implements Parameter {
+    private final YdbType ydbType;
+    private final Object value;
 
-    private final TableClient tableClient;
+    public YdbParameter(YdbType ydbType, Object value) {
+        this.ydbType = ydbType;
+        this.value = value;
+    }
 
-    public YdbConnectionFactory(TableClient tableClient) {
-        this.tableClient = tableClient;
+    public YdbParameter(YdbType ydbType) {
+        this.ydbType = ydbType;
+        this.value = null;
     }
 
     @Override
-    public Mono<YdbConnection> create() {
-        return Mono.just(new YdbConnection(tableClient));
+    public Type getType() {
+        return ydbType;
     }
 
     @Override
-    public ConnectionFactoryMetadata getMetadata() {
-        return YdbConnectionFactoryMetadata.INSTANCE;
+    public Object getValue() {
+        return value;
     }
 }

@@ -21,15 +21,15 @@ import io.r2dbc.spi.R2dbcType;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.Objects;
-
-import javax.annotation.Nonnull;
 
 import tech.ydb.io.r2dbc.type.YdbType;
+import tech.ydb.table.result.ValueReader;
+import tech.ydb.table.values.OptionalType;
+import tech.ydb.table.values.Type;
 import tech.ydb.table.values.Value;
 
 /**
@@ -38,6 +38,7 @@ import tech.ydb.table.values.Value;
 public class YdbParameterResolver {
 
     private static final HashMap<Class<?>, YdbType> CLASS_YDB_TYPE = new HashMap<>(32);
+    private static final HashMap<Type, YdbType> TYPE_YDB_TYPE = new HashMap<>(32);
 
     static {
         CLASS_YDB_TYPE.put(String.class, YdbType.TEXT);
@@ -56,11 +57,15 @@ public class YdbParameterResolver {
         CLASS_YDB_TYPE.put(boolean.class, YdbType.BOOL);
         CLASS_YDB_TYPE.put(Boolean.class, YdbType.BOOL);
         CLASS_YDB_TYPE.put(byte[].class, YdbType.BYTES);
-        CLASS_YDB_TYPE.put(Date.class, YdbType.TIMESTAMP);
+        CLASS_YDB_TYPE.put(Instant.class, YdbType.TIMESTAMP);
         CLASS_YDB_TYPE.put(LocalDate.class, YdbType.DATE);
         CLASS_YDB_TYPE.put(LocalDateTime.class, YdbType.DATETIME);
         CLASS_YDB_TYPE.put(BigDecimal.class, YdbType.DECIMAL);
         CLASS_YDB_TYPE.put(Duration.class, YdbType.INTERVAL);
+
+        for (YdbType ydbType : YdbType.values()) {
+            TYPE_YDB_TYPE.put(ydbType.getYdbType(), ydbType);
+        }
     }
 
     private YdbParameterResolver() {
@@ -76,6 +81,16 @@ public class YdbParameterResolver {
         return resolveClass(param.getClass()).createValue(param);
     }
 
+    public static <T> T resolveResult(ValueReader valueReader, Class<T> tClass) {
+        Type type = valueReader.getType();
+        if (type instanceof OptionalType) {
+            type = type.unwrapOptional();
+        }
+
+        Object result = TYPE_YDB_TYPE.get(type).getObject(valueReader);
+        return tClass.cast(result);
+    }
+
     public static Value<?> resolveEmptyValue(Class<?> clazz) {
         return resolveClass(clazz).getYdbType().makeOptional().emptyValue();
     }
@@ -88,12 +103,12 @@ public class YdbParameterResolver {
         }
     }
 
-    private static Value<?> resolveParameter(@Nonnull Parameter parameter) {
+    private static Value<?> resolveParameter(Parameter parameter) {
         if (parameter.getType() instanceof YdbType ydbType) {
             if (parameter.getValue() == null) {
                 return ydbType.getYdbType().makeOptional().emptyValue();
             }
-            return ydbType.createValue(Objects.requireNonNull(parameter.getValue()));
+            return ydbType.createValue(parameter.getValue());
         } else if (parameter.getType() instanceof R2dbcType r2dbcType) {
             if (parameter.getValue() == null) {
                 return YdbType.valueOf(r2dbcType).getYdbType().makeOptional().emptyValue();
@@ -104,7 +119,7 @@ public class YdbParameterResolver {
             if (parameter.getValue() == null) {
                 return resolveClass(parameter.getType().getJavaType()).getYdbType().makeOptional().emptyValue();
             }
-            return resolveClass(parameter.getType().getJavaType()).createValue(Objects.requireNonNull(parameter.getValue()));
+            return resolveClass(parameter.getType().getJavaType()).createValue(parameter.getValue());
         }
     }
 }

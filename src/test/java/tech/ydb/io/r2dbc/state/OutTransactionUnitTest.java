@@ -22,7 +22,9 @@ import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
 import tech.ydb.core.Result;
 import tech.ydb.core.Status;
-import tech.ydb.io.r2dbc.result.YdbDDLResult;
+import tech.ydb.core.StatusCode;
+import tech.ydb.core.UnexpectedResultException;
+import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.table.Session;
 import tech.ydb.table.TableClient;
 
@@ -43,10 +45,38 @@ public class OutTransactionUnitTest {
 
         YdbConnectionState state = new OutTransaction(client, null, null);
         state.executeSchemaQuery("test")
-                .map(YdbDDLResult::getStatus)
+                .flux()
+                .flatMap(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
-                .expectNext(Status.SUCCESS)
+                .expectNext(0L)
                 .verifyComplete();
+    }
+
+    @Test
+    public void createSessionErrorTest() {
+        TableClient client = mock(TableClient.class);
+        when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.fail(Status.of(StatusCode.CANCELLED))));
+
+        YdbConnectionState state = new OutTransaction(client, null, null);
+        state.executeSchemaQuery("test")
+                .as(StepVerifier::create)
+                .verifyError(UnexpectedResultException.class);
+    }
+
+    @Test
+    public void executeSchemaQueryFailTest() {
+        TableClient client = mock(TableClient.class);
+        Session session = mock(Session.class);
+        when(session.executeSchemeQuery(any()))
+                .thenReturn(CompletableFuture.completedFuture(Status.of(StatusCode.BAD_REQUEST)));
+        when(client.createSession(any()))
+                .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
+
+        YdbConnectionState state = new OutTransaction(client, null, null);
+        state.executeSchemaQuery("test")
+                .map(YdbResult::getRowsUpdated)
+                .as(StepVerifier::create)
+                .verifyError(UnexpectedResultException.class);
     }
 
     @Test

@@ -16,17 +16,23 @@
 
 package tech.ydb.io.r2dbc.state;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import tech.ydb.io.r2dbc.result.YdbDMLResult;
-import tech.ydb.io.r2dbc.result.YdbDDLResult;
+import tech.ydb.io.r2dbc.query.OperationType;
+import tech.ydb.io.r2dbc.result.YdbResult;
+import tech.ydb.io.r2dbc.util.ResultExtractor;
 import tech.ydb.table.Session;
+import tech.ydb.table.query.DataQueryResult;
 import tech.ydb.table.query.Params;
 import tech.ydb.table.transaction.TxControl;
 
 /**
  * @author Kirill Kurdyukov
  */
-final class InTransaction implements YdbConnectionState {
+public final class InTransaction implements YdbConnectionState {
     public static final String SCHEME_QUERY_INSIDE_TRANSACTION = "Scheme query cannot be executed inside active "
             + "transaction. This behavior may be changed by property schemeQueryTxMode";
 
@@ -39,13 +45,33 @@ final class InTransaction implements YdbConnectionState {
     }
 
     @Override
-    public Mono<YdbDMLResult> executeDataQuery(String yql, Params params) {
+    public Flux<YdbResult> executeDataQuery(String yql, Params params, List<OperationType> operationTypes) {
         return Mono.fromFuture(session.executeDataQuery(yql, TxControl.id(transactionId), params))
-                .map(dataQueryResultResult -> new YdbDMLResult(dataQueryResultResult.getValue()));
+                .flatMapMany(dataQueryResult -> {
+                    Mono<DataQueryResult> dataQueryResultMono = ResultExtractor.extract(dataQueryResult);
+
+                    return dataQueryResultMono.flatMapMany(result -> {
+                        List<YdbResult> results = new ArrayList<>();
+                        for (int opIndex = 0, resSetIndex = 0; opIndex < operationTypes.size(); opIndex++) {
+                            results.add(switch (operationTypes.get(opIndex)) {
+                                case SELECT -> {
+                                    resSetIndex++;
+                                    yield new YdbResult(result.getResultSet(resSetIndex));
+                                }
+                                case UPDATE -> YdbResult.UPDATE_RESULT;
+                                case SCHEME ->
+                                        throw new IllegalStateException("DDL operation not support in " +
+                                                "executeDataQuery");
+                            });
+                        }
+
+                        return Flux.fromIterable(results);
+                    });
+                });
     }
 
     @Override
-    public Mono<YdbDDLResult> executeSchemaQuery(String yql) {
+    public Mono<YdbResult> executeSchemaQuery(String yql) {
         return Mono.error(new IllegalStateException(SCHEME_QUERY_INSIDE_TRANSACTION));
     }
 }

@@ -16,9 +16,9 @@
 
 package tech.ydb.io.r2dbc.query;
 
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import tech.ydb.io.r2dbc.statement.binding.Binding;
 
@@ -43,7 +43,7 @@ public class YdbQuery {
         this(yql, indexesArgsNames, queryType, List.of());
     }
 
-    public String getYqlQuery(Binding binding) throws SQLException {
+    public String getYqlQuery(Binding binding) {
         return getDeclares(binding) + yqlQuery;
     }
 
@@ -64,6 +64,12 @@ public class YdbQuery {
 
     public QueryType type() {
         return type;
+    }
+
+    public List<OperationType> getOperationTypes() {
+        return sqlOperations.stream()
+                .map(SqlOperation::getOperationType)
+                .collect(Collectors.toList());
     }
 
     @Override
