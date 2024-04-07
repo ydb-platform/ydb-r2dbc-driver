@@ -16,27 +16,27 @@
 
 package tech.ydb.io.r2dbc.state;
 
+import java.util.List;
+
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import tech.ydb.io.r2dbc.YdbContext;
-import tech.ydb.table.Session;
-import tech.ydb.table.transaction.TxControl;
+import tech.ydb.io.r2dbc.query.OperationType;
+import tech.ydb.io.r2dbc.result.YdbResult;
+import tech.ydb.table.query.Params;
 
 /**
- * @author Egor Kuleshov
+ * @author Kirill Kurdyukov
  */
-public class OutsideTransactionState extends AutoCommitState implements YdbConnectionState {
+public final class Close implements YdbConnectionState {
+    static final Close INSTANCE = new Close();
 
-    public OutsideTransactionState(YdbContext ydbContext, YdbTxSettings ydbTxSettings) {
-        super(ydbContext, ydbTxSettings);
+    @Override
+    public Flux<YdbResult> executeDataQuery(String yql, Params params, List<OperationType> expressionTypes) {
+        return Flux.error(new IllegalStateException("Connection is closed"));
     }
 
     @Override
-    public Mono<Session> getSession() {
-        return Mono.error(new IllegalStateException("Transaction not started"));
-    }
-
-    @Override
-    public TxControl<?> txControl() {
-        throw new IllegalStateException("Transaction not started");
+    public Mono<YdbResult> executeSchemaQuery(String yql) {
+        return Mono.error(new IllegalStateException("Connection is closed"));
     }
 }

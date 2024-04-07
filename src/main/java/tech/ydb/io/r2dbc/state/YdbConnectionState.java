@@ -16,34 +16,20 @@
 
 package tech.ydb.io.r2dbc.state;
 
+import java.util.List;
+
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import tech.ydb.io.r2dbc.YdbIsolationLevel;
-import tech.ydb.table.Session;
-import tech.ydb.table.transaction.TxControl;
+import tech.ydb.io.r2dbc.query.OperationType;
+import tech.ydb.io.r2dbc.result.YdbResult;
+import tech.ydb.table.query.Params;
 
 /**
- * @author Egor Kuleshov
+ * @author Kirill Kurdyukov
  */
 public interface YdbConnectionState {
-    Mono<Session> getSession();
 
-    TxControl<?> txControl();
+    Flux<YdbResult> executeDataQuery(String yql, Params params, List<OperationType> expressionTypes);
 
-    boolean isInTransaction();
-
-    YdbTxSettings getYdbTxSettings();
-
-    YdbConnectionState withBeginTransaction(String id, Session session, YdbTxSettings ydbTxSettings);
-
-    YdbConnectionState withCommitTransaction();
-
-    YdbConnectionState withRollbackTransaction();
-
-    YdbConnectionState withAutoCommit(boolean autoCommit);
-
-    YdbConnectionState withIsolationLevel(YdbIsolationLevel isolationLevel);
-
-    YdbConnectionState close();
-
-    boolean isClosed();
+    Mono<YdbResult> executeSchemaQuery(String yql);
 }

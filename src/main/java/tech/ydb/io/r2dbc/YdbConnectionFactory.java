@@ -19,21 +19,22 @@ package tech.ydb.io.r2dbc;
 import io.r2dbc.spi.ConnectionFactory;
 import io.r2dbc.spi.ConnectionFactoryMetadata;
 import reactor.core.publisher.Mono;
+import tech.ydb.table.TableClient;
 
 /**
  * @author Kirill Kurdyukov
  */
 public final class YdbConnectionFactory implements ConnectionFactory {
 
-    private final YdbContext ydbContext;
+    private final TableClient tableClient;
 
-    public YdbConnectionFactory(YdbContext ydbContext) {
-        this.ydbContext = ydbContext;
+    public YdbConnectionFactory(TableClient tableClient) {
+        this.tableClient = tableClient;
     }
 
     @Override
     public Mono<YdbConnection> create() {
-        return Mono.just(new YdbConnection(ydbContext));
+        return Mono.just(new YdbConnection(tableClient));
     }
 
     @Override
