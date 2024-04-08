@@ -38,7 +38,7 @@ public class AutoCommitState implements YdbConnectionState {
     @Override
     public Mono<Session> getSession() {
         return Mono.fromFuture(ydbContext.getTableClient().createSession(ydbContext.getCreateSessionTimeout()))
-                .map(sessionResult -> ResultExtractor.extract(sessionResult, "Error creating session"));
+                .flatMap(sessionResult -> ResultExtractor.extract(sessionResult, "Error creating session"));
     }
 
     @Override
@@ -57,7 +57,8 @@ public class AutoCommitState implements YdbConnectionState {
 
     @Override
     public YdbConnectionState withBeginTransaction(String id, Session session, YdbTxSettings ydbTxSettings) {
-        return new InsideTransactionState(ydbContext, id, session, new YdbTxSettings(ydbTxSettings.getIsolationLevel(),
+        return new InsideTransactionState(ydbContext, id, session, new YdbTxSettings(
+                ydbTxSettings.getIsolationLevel(),
                 ydbTxSettings.isReadOnly(),
                 false));
     }

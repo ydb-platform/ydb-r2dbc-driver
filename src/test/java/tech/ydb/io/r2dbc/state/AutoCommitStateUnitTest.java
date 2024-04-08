@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
 import tech.ydb.core.Result;
 import tech.ydb.core.Status;
+import tech.ydb.core.StatusCode;
 import tech.ydb.core.UnexpectedResultException;
 import tech.ydb.io.r2dbc.YdbContext;
 import tech.ydb.io.r2dbc.result.YdbResult;
@@ -59,8 +60,10 @@ public class AutoCommitStateUnitTest {
     public void createSessionErrorTest() {
         when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.fail(Status.of(StatusCode.CANCELLED))));
 
-        YdbConnectionState state = new OutTransaction(client, null, null);
-        state.executeSchemaQuery("test")
+        YdbConnectionState state = new AutoCommitState(ydbContext, ydbContext.getDefaultYdbTxSettings());
+        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+
+        queryExecutor.executeSchemaQuery("test")
                 .as(StepVerifier::create)
                 .verifyError(UnexpectedResultException.class);
     }
@@ -68,13 +71,13 @@ public class AutoCommitStateUnitTest {
     @Test
     public void executeSchemaQueryFailTest() {
         Session session = mock(Session.class);
-        when(session.executeSchemeQuery(any(), any()))
-                .thenReturn(CompletableFuture.completedFuture(Status.of(StatusCode.BAD_REQUEST)));
-        when(client.createSession(any(), any()))
-                .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
+        when(session.executeSchemeQuery(any(), any())).thenReturn(CompletableFuture.completedFuture(Status.of(StatusCode.BAD_REQUEST)));
+        when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
 
-        YdbConnectionState state = new OutTransaction(client, null, null);
-        state.executeSchemaQuery("test")
+        YdbConnectionState state = new AutoCommitState(ydbContext, ydbContext.getDefaultYdbTxSettings());
+        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+
+        queryExecutor.executeSchemaQuery("test")
                 .map(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
                 .verifyError(UnexpectedResultException.class);

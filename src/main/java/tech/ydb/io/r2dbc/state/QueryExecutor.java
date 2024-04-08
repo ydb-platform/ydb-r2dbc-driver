@@ -17,21 +17,22 @@
 package tech.ydb.io.r2dbc.state;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.function.Function;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import tech.ydb.io.r2dbc.result.YdbDDLResult;
-import tech.ydb.io.r2dbc.result.YdbDMLResult;
+import tech.ydb.io.r2dbc.query.OperationType;
+import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.table.query.Params;
 
 /**
  * @author Egor Kuleshov
  */
 public interface QueryExecutor {
-    Flux<YdbDMLResult> executeDataQuery(String yql, Params params);
+    Flux<YdbResult> executeDataQuery(String yql, Params params, List<OperationType>operationTypes);
 
-    Flux<YdbDDLResult> executeSchemaQuery(String yql);
+    Flux<YdbResult> executeSchemaQuery(String yql);
 
     Mono<Void> beginTransaction();
 
