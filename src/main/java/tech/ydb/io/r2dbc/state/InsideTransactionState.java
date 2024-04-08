@@ -16,9 +16,12 @@
 
 package tech.ydb.io.r2dbc.state;
 
+import java.util.Objects;
+
 import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.YdbContext;
 import tech.ydb.io.r2dbc.YdbIsolationLevel;
+import tech.ydb.io.r2dbc.YdbTxSettings;
 import tech.ydb.table.Session;
 import tech.ydb.table.transaction.TxControl;
 
@@ -61,24 +64,35 @@ public final class InsideTransactionState implements YdbConnectionState {
     }
 
     @Override
+    public YdbConnectionState withDataQuery(String txId, Session session) {
+        if (id.equals(txId)) {
+            return this;
+        }
+
+        return new OutsideTransactionState(context, ydbTxSettings);
+    }
+
+    @Override
     public YdbConnectionState withBeginTransaction(String id, Session session, YdbTxSettings ydbTxSettings) {
         return this;
     }
 
     @Override
     public YdbConnectionState withCommitTransaction() {
+        session.close();
         return new OutsideTransactionState(context, ydbTxSettings);
     }
 
     @Override
     public YdbConnectionState withRollbackTransaction() {
+        session.close();
         return new OutsideTransactionState(context, ydbTxSettings);
     }
 
     @Override
     public YdbConnectionState withAutoCommit(boolean autoCommit) {
         if (autoCommit) {
-            return new AutoCommitState(context, ydbTxSettings);
+            return new OutsideTransactionState(context, ydbTxSettings.withAutoCommit(true));
         }
 
         return this;
@@ -95,7 +109,6 @@ public final class InsideTransactionState implements YdbConnectionState {
 
     @Override
     public YdbConnectionState close() {
-        session.close();
         return CloseState.INSTANCE;
     }
 
@@ -106,5 +119,22 @@ public final class InsideTransactionState implements YdbConnectionState {
 
     public String getId() {
         return id;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        InsideTransactionState that = (InsideTransactionState) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

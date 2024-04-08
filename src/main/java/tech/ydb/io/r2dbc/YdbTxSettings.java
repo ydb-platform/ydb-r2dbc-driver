@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc.state;
+package tech.ydb.io.r2dbc;
+
+import java.util.Objects;
 
 import io.r2dbc.spi.TransactionDefinition;
-import tech.ydb.io.r2dbc.YdbIsolationLevel;
-import tech.ydb.io.r2dbc.YdbTransactionDefinition;
 import tech.ydb.table.transaction.Transaction;
 import tech.ydb.table.transaction.TxControl;
 
@@ -29,7 +29,7 @@ public class YdbTxSettings {
     public static final YdbTxSettings DEFAULT = new YdbTxSettings(YdbIsolationLevel.SERIALIZABLE, false, true);
     private volatile YdbIsolationLevel isolationLevel;
     private final boolean readOnly;
-    private volatile boolean autoCommit;
+    private final boolean autoCommit;
 
     public YdbTxSettings(YdbIsolationLevel isolationLevel, boolean readOnly, boolean autoCommit) {
         this.isolationLevel = isolationLevel;
@@ -59,8 +59,8 @@ public class YdbTxSettings {
         return autoCommit;
     }
 
-    public void setAutoCommit(boolean autoCommit) {
-        this.autoCommit = autoCommit;
+    public YdbTxSettings withAutoCommit(boolean autoCommit) {
+        return new YdbTxSettings(isolationLevel, readOnly, autoCommit);
     }
 
     public TxControl<?> txControl() {
@@ -101,5 +101,22 @@ public class YdbTxSettings {
             case STALE_READ_ONLY -> TxControl.staleRo().setCommitTx(isAutoCommit);
             case SNAPSHOT_READ_ONLY -> TxControl.snapshotRo();
         };
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        YdbTxSettings that = (YdbTxSettings) o;
+        return readOnly == that.readOnly && autoCommit == that.autoCommit && isolationLevel == that.isolationLevel;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(isolationLevel, readOnly, autoCommit);
     }
 }

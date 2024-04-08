@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc.state;
+package tech.ydb.io.r2dbc.executor;
 
 import java.time.Duration;
 import java.util.List;
@@ -24,6 +24,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbResult;
+import tech.ydb.io.r2dbc.state.YdbConnectionState;
+import tech.ydb.io.r2dbc.YdbTxSettings;
 import tech.ydb.table.query.Params;
 
 /**
@@ -48,7 +50,7 @@ public interface QueryExecutor {
 
     Mono<Void> setAutoCommit(boolean autoCommit);
 
-    Mono<Void> close();
-
     Mono<Void> setStatementTimeout(Duration timeout);
+
+    Mono<Void> close();
 }

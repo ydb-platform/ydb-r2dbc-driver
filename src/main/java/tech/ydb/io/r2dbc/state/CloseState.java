@@ -18,6 +18,7 @@ package tech.ydb.io.r2dbc.state;
 
 import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.YdbIsolationLevel;
+import tech.ydb.io.r2dbc.YdbTxSettings;
 import tech.ydb.table.Session;
 import tech.ydb.table.transaction.TxControl;
 
@@ -26,12 +27,14 @@ import tech.ydb.table.transaction.TxControl;
  */
 public class CloseState implements YdbConnectionState {
     public static final String CLOSED_STATE_MESSAGE = "Connection closed";
+    public static final CloseState INSTANCE = new CloseState();
 
-    static final CloseState INSTANCE = new CloseState();
+    private CloseState() {
+    }
 
     @Override
     public Mono<Session> getSession() {
-        throw new IllegalStateException(CLOSED_STATE_MESSAGE);
+        return Mono.error(new IllegalStateException(CLOSED_STATE_MESSAGE));
     }
 
     @Override
@@ -46,6 +49,11 @@ public class CloseState implements YdbConnectionState {
 
     @Override
     public YdbTxSettings getYdbTxSettings() {
+        throw new IllegalStateException(CLOSED_STATE_MESSAGE);
+    }
+
+    @Override
+    public YdbConnectionState withDataQuery(String txId, Session session) {
         throw new IllegalStateException(CLOSED_STATE_MESSAGE);
     }
 

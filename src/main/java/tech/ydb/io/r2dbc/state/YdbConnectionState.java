@@ -18,6 +18,7 @@ package tech.ydb.io.r2dbc.state;
 
 import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.YdbIsolationLevel;
+import tech.ydb.io.r2dbc.YdbTxSettings;
 import tech.ydb.table.Session;
 import tech.ydb.table.transaction.TxControl;
 
@@ -32,6 +33,8 @@ public interface YdbConnectionState {
     boolean isInTransaction();
 
     YdbTxSettings getYdbTxSettings();
+
+    YdbConnectionState withDataQuery(String txId, Session session);
 
     YdbConnectionState withBeginTransaction(String id, Session session, YdbTxSettings ydbTxSettings);
 

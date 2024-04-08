@@ -18,7 +18,6 @@ package tech.ydb.io.r2dbc;
 
 import java.time.Duration;
 
-import tech.ydb.io.r2dbc.state.YdbTxSettings;
 import tech.ydb.table.TableClient;
 /**
  * @author Egor Kuleshov

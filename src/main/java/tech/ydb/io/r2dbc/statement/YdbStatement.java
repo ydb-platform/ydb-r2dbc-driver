@@ -18,7 +18,7 @@ package tech.ydb.io.r2dbc.statement;
 
 import io.r2dbc.spi.Statement;
 import reactor.core.publisher.Flux;
-import tech.ydb.io.r2dbc.state.QueryExecutor;
+import tech.ydb.io.r2dbc.executor.QueryExecutor;
 import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.io.r2dbc.statement.binding.Bindings;
 import tech.ydb.io.r2dbc.query.YdbQuery;

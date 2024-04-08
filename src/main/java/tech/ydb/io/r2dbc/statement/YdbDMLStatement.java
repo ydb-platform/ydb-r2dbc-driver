@@ -19,7 +19,7 @@ package tech.ydb.io.r2dbc.statement;
 import reactor.core.publisher.Flux;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 import tech.ydb.io.r2dbc.result.YdbResult;
-import tech.ydb.io.r2dbc.state.QueryExecutor;
+import tech.ydb.io.r2dbc.executor.QueryExecutor;
 
 /**
  * @author Egor Kuleshov

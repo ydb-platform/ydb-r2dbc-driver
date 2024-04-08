@@ -23,21 +23,18 @@ import java.time.LocalDateTime;
 import java.util.stream.Stream;
 
 import io.r2dbc.spi.Result;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import reactor.test.StepVerifier;
-import tech.ydb.io.r2dbc.helper.R2dbcConnectionExtension;
 import tech.ydb.io.r2dbc.parameter.YdbParameter;
 import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.io.r2dbc.type.YdbType;
-import tech.ydb.test.junit5.YdbHelperExtension;
 
 /**
  * @author Egor Kuleshov
  */
-public class TypesIntegrationTest {
+public class TypesIntegrationTest extends IntegrationBaseTest {
     static Stream<Object[]> values() {
         return Stream.of(
                 new Object[]{YdbType.BOOL, true},
@@ -54,12 +51,6 @@ public class TypesIntegrationTest {
                 new Object[]{YdbType.INTERVAL, Duration.ofSeconds(1)}
         );
     }
-
-    @RegisterExtension
-    private static final YdbHelperExtension ydb = new YdbHelperExtension();
-
-    @RegisterExtension
-    private final R2dbcConnectionExtension r2dbc = new R2dbcConnectionExtension(ydb);
 
     @ParameterizedTest(name = "with {0}")
     @EnumSource(value = YdbType.class, mode = EnumSource.Mode.EXCLUDE, names = {

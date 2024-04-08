@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc.state;
+package tech.ydb.io.r2dbc.executor;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -28,6 +28,10 @@ import tech.ydb.core.UnexpectedResultException;
 import tech.ydb.io.r2dbc.YdbContext;
 import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbResult;
+import tech.ydb.io.r2dbc.state.CloseState;
+import tech.ydb.io.r2dbc.state.InsideTransactionState;
+import tech.ydb.io.r2dbc.state.YdbConnectionState;
+import tech.ydb.io.r2dbc.YdbTxSettings;
 import tech.ydb.io.r2dbc.util.ResultExtractor;
 import tech.ydb.table.query.DataQueryResult;
 import tech.ydb.table.query.Params;
@@ -63,22 +67,32 @@ public class QueryExecutorImpl implements QueryExecutor {
                                             ResultExtractor.extract(dataQueryResult);
 
                                     return dataQueryResultMono.flatMapMany(result -> {
-                                        List<YdbResult> results = new ArrayList<>();
-                                        for (int opIndex = 0, resSetIndex = 0; opIndex < operationTypes.size(); opIndex++) {
-                                            results.add(switch (operationTypes.get(opIndex)) {
-                                                case SELECT -> new YdbResult(result.getResultSet(resSetIndex++));
-                                                case UPDATE -> YdbResult.UPDATE_RESULT;
-                                                case SCHEME -> throw new IllegalStateException("DDL operation not" +
-                                                        " support in" +
-                                                        " " +
-                                                        "executeDataQuery");
-                                            });
-                                        }
+                                                List<YdbResult> results = new ArrayList<>();
+                                                for (int opIndex = 0, resSetIndex = 0; opIndex < operationTypes.size(); opIndex++) {
+                                                    results.add(switch (operationTypes.get(opIndex)) {
+                                                        case SELECT -> new YdbResult(result.getResultSet(resSetIndex++));
+                                                        case UPDATE -> YdbResult.UPDATE_RESULT;
+                                                        case SCHEME -> throw new IllegalStateException("DDL operation" +
+                                                                " not" +
+                                                                " support in" +
+                                                                " " +
+                                                                "executeDataQuery");
+                                                    });
+                                                }
 
-                                        return Flux.fromIterable(results);
-                                    });
+                                                return Flux.fromIterable(results);
+                                            }).doOnComplete(() -> {
+                                                YdbConnectionState nextState = connectionState.withDataQuery(
+                                                        dataQueryResult.getValue().getTxId(),
+                                                        session
+                                                );
+                                                if (!nextState.isInTransaction()) {
+                                                    session.close();
+                                                }
+                                                updateState(nextState);
+                                            }).doOnError((unused) -> session.close())
+                                            .doOnCancel(session::close);
                                 })
-                                .doFinally((signalType) -> session.close())
                 )
         );
     }
@@ -92,9 +106,14 @@ public class QueryExecutorImpl implements QueryExecutor {
             }
 
             return connectionState.getSession()
-                    .flatMap(session -> Mono.fromFuture(session.executeSchemeQuery(yql,
-                            withStatementTimeout(new ExecuteSchemeQuerySettings()))))
-                    .flatMap(status -> {
+                    .flatMap(session -> {
+                        try (session) {
+                            return Mono.fromFuture(session.executeSchemeQuery(yql,
+                                    withStatementTimeout(new ExecuteSchemeQuerySettings())));
+                        } catch (Throwable t) {
+                            return Mono.error(t);
+                        }
+                    }).flatMap(status -> {
                         if (!status.isSuccess()) {
                             return Mono.error(new UnexpectedResultException("Schema query failed", status));
                         }
@@ -119,16 +138,19 @@ public class QueryExecutorImpl implements QueryExecutor {
         if (currentYdbConnectionState.isInTransaction()) {
             return Mono.empty();
         }
+        YdbTxSettings transactionSettings = ydbTxSettings.withAutoCommit(false);
 
         return currentYdbConnectionState.getSession()
                 .flatMap(session -> Mono.fromFuture(session.beginTransaction(
-                                ydbTxSettings.getMode(),
+                                transactionSettings.getMode(),
                                 withStatementTimeout(new BeginTxSettings())))
                         .map(Result::getValue)
                         .doOnSuccess(transaction -> updateState(currentYdbConnectionState.withBeginTransaction(
                                 transaction.getId(),
                                 session,
-                                ydbTxSettings))))
+                                transactionSettings)))
+                        .doOnError(unused -> session.close())
+                        .doOnCancel(session::close))
                 .then();
     }
 
@@ -145,6 +167,7 @@ public class QueryExecutorImpl implements QueryExecutor {
                     .flatMap(session -> Mono.fromFuture(session.commitTransaction(
                                     insideTransactionState.getId(),
                                     withStatementTimeout(new CommitTxSettings())))
+                            .flatMap(ResultExtractor::extract)
                             .doOnSuccess(unused -> updateState(connectionState.withCommitTransaction())))
                     .then();
         });
@@ -162,6 +185,7 @@ public class QueryExecutorImpl implements QueryExecutor {
                     .flatMap(session -> Mono.fromFuture(session.rollbackTransaction(
                                     insideTransactionState.getId(),
                                     withStatementTimeout(new RollbackTxSettings())))
+                            .flatMap(ResultExtractor::extract)
                             .doOnSuccess(unused -> updateState(connectionState.withRollbackTransaction())))
                     .then();
         });
@@ -186,7 +210,8 @@ public class QueryExecutorImpl implements QueryExecutor {
             }
 
             if (autoCommit && connectionState.isInTransaction()) {
-                return commitTransaction();
+                return commitTransaction()
+                        .doOnSuccess((unused) -> updateState(connectionState.withAutoCommit(true)));
             }
 
             updateState(connectionState.withAutoCommit(autoCommit));
