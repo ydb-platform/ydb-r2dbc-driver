@@ -46,6 +46,8 @@ public interface YdbConnectionState {
 
     YdbConnectionState withIsolationLevel(YdbIsolationLevel isolationLevel);
 
+    YdbConnectionState withReadOnly(boolean readOnly);
+
     YdbConnectionState close();
 
     boolean isClosed();

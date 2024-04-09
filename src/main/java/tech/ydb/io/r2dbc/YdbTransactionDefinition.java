@@ -30,7 +30,11 @@ public class YdbTransactionDefinition implements TransactionDefinition {
 
     private final Map<Option<?>, Object> options;
 
-    YdbTransactionDefinition(Map<Option<?>, Object> options) {
+    public YdbTransactionDefinition() {
+        this(new HashMap<>());
+    }
+
+    private YdbTransactionDefinition(Map<Option<?>, Object> options) {
         this.options = options;
     }
 

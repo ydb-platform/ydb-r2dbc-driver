@@ -28,18 +28,33 @@ import tech.ydb.table.transaction.TxControl;
 public class YdbTxSettings {
     public static final YdbTxSettings DEFAULT = new YdbTxSettings(YdbIsolationLevel.SERIALIZABLE, false, true);
     private volatile YdbIsolationLevel isolationLevel;
-    private final boolean readOnly;
+    private volatile boolean readOnly;
     private final boolean autoCommit;
 
     public YdbTxSettings(YdbIsolationLevel isolationLevel, boolean readOnly, boolean autoCommit) {
+        Objects.requireNonNull(isolationLevel, "Expected isolation non null");
+        validate(isolationLevel, readOnly);
         this.isolationLevel = isolationLevel;
         this.readOnly = readOnly;
         this.autoCommit = autoCommit;
     }
 
     public YdbTxSettings(TransactionDefinition transactionDefinition) {
+        YdbIsolationLevel ydbIsolationLevelOption =
+                transactionDefinition.getAttribute(YdbTransactionDefinition.YDB_ISOLATION_LEVEL);
+        if (ydbIsolationLevelOption == null) {
+            throw new IllegalArgumentException("Expected ydbIsolation level in transaction definition, but not found");
+        }
+
         this.isolationLevel = transactionDefinition.getAttribute(YdbTransactionDefinition.YDB_ISOLATION_LEVEL);
-        this.readOnly =  Boolean.TRUE.equals(transactionDefinition.getAttribute(TransactionDefinition.READ_ONLY));
+        this.readOnly = isolationLevel.isReadOnly();
+        Boolean readOnlyOption = transactionDefinition.getAttribute(TransactionDefinition.READ_ONLY);
+        if (readOnlyOption != null) {
+            this.readOnly = readOnlyOption;
+        }
+
+        validate(isolationLevel, readOnly);
+
         this.autoCommit = false;
     }
 
@@ -49,10 +64,20 @@ public class YdbTxSettings {
 
     public void setIsolationLevel(YdbIsolationLevel isolationLevel) {
         this.isolationLevel = isolationLevel;
+
+        if (isolationLevel.isReadOnly()) {
+            this.readOnly = true;
+        }
     }
 
     public boolean isReadOnly() {
         return readOnly;
+    }
+
+    public void setReadOnly(boolean readOnly) {
+        validate(isolationLevel, readOnly);
+
+        this.readOnly = readOnly;
     }
 
     public boolean isAutoCommit() {
@@ -69,9 +94,7 @@ public class YdbTxSettings {
 
     public Transaction.Mode getMode() {
         if (!readOnly) {
-            if (!isolationLevel.equals(YdbIsolationLevel.SERIALIZABLE)) {
-                throw new IllegalStateException("Unsupported isolation level " + isolationLevel + " for read write mode");
-            }
+            validate(isolationLevel, readOnly);
 
             return Transaction.Mode.SERIALIZABLE_READ_WRITE;
         }
@@ -83,12 +106,15 @@ public class YdbTxSettings {
         };
     }
 
-    private static TxControl<?> txControl(YdbIsolationLevel isolationLevel, boolean isReadOnly, boolean isAutoCommit) {
-        if (!isReadOnly) {
-            if (!isolationLevel.equals(YdbIsolationLevel.SERIALIZABLE)) {
-                throw new IllegalStateException("Unsupported isolation level " + isolationLevel + " for read write mode");
-            }
+    private static void validate(YdbIsolationLevel isolationLevel, boolean readOnly) {
+        if (isolationLevel.isReadOnly() && !readOnly) {
+            throw new IllegalArgumentException("Unsupported isolation level " + isolationLevel + " for read write mode");
+        }
+    }
 
+    private static TxControl<?> txControl(YdbIsolationLevel isolationLevel, boolean isReadOnly, boolean isAutoCommit) {
+        validate(isolationLevel, isReadOnly);
+        if (!isReadOnly) {
             return TxControl.serializableRw().setCommitTx(isAutoCommit);
         }
 

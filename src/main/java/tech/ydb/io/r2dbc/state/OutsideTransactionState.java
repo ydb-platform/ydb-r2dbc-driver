@@ -99,6 +99,13 @@ public class OutsideTransactionState implements YdbConnectionState {
     }
 
     @Override
+    public YdbConnectionState withReadOnly(boolean readOnly) {
+        this.ydbTxSettings.setReadOnly(readOnly);
+
+        return this;
+    }
+
+    @Override
     public YdbConnectionState close() {
         return CloseState.INSTANCE;
     }

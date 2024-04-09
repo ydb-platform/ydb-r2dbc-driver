@@ -53,7 +53,11 @@ public class YdbConnection implements Connection {
 
     @Override
     public Mono<Void> beginTransaction(TransactionDefinition definition) {
-        return queryExecutor.beginTransaction(new YdbTxSettings(definition));
+        try {
+            return queryExecutor.beginTransaction(new YdbTxSettings(definition));
+        } catch (IllegalArgumentException exception) {
+            return Mono.error(exception);
+        }
     }
 
     @Override
@@ -144,6 +148,14 @@ public class YdbConnection implements Connection {
 
     public Mono<Void> setYdbTransactionIsolationLevel(YdbIsolationLevel isolationLevel) {
         return queryExecutor.updateState(ydbTxState -> ydbTxState.withIsolationLevel(isolationLevel));
+    }
+
+    public boolean isReadOnly() {
+        return queryExecutor.getCurrentState().getYdbTxSettings().isReadOnly();
+    }
+
+    public Mono<Void> setReadOnly(boolean readOnly) {
+        return queryExecutor.updateState(ydbTxState -> ydbTxState.withReadOnly(readOnly));
     }
 
     @Override

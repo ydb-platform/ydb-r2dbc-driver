@@ -37,10 +37,30 @@ public class TransactionIntegrationTest extends IntegrationBaseTest {
         r2dbc.connection().commitTransaction()
                 .as(StepVerifier::create)
                 .verifyComplete();
+        r2dbc.connection().setYdbTransactionIsolationLevel(YdbIsolationLevel.SERIALIZABLE)
+                .as(StepVerifier::create)
+                .verifyComplete();
+        r2dbc.connection().setReadOnly(false)
+                .as(StepVerifier::create)
+                .verifyComplete();
         dropTable();
     }
+
     @Test
-    public void beginTransactionAndCommit() {
+    public void beginTransactionWithDefinitionTest() {
+        YdbConnection connection = r2dbc.connection();
+
+        connection.beginTransaction(new YdbTransactionDefinition()
+                        .isolationLevel(YdbIsolationLevel.SNAPSHOT_READ_ONLY)
+                        .readOnly(true))
+                .as(StepVerifier::create)
+                .verifyComplete();
+
+        Assertions.assertEquals(YdbIsolationLevel.SNAPSHOT_READ_ONLY, connection.getYdbTransactionIsolationLevel());
+    }
+
+    @Test
+    public void beginTransactionAndCommitTest() {
         YdbConnection connection = r2dbc.connection();
 
         connection.beginTransaction()
@@ -58,7 +78,7 @@ public class TransactionIntegrationTest extends IntegrationBaseTest {
     }
 
     @Test
-    public void beginTransactionAndAutoCommitTrue() {
+    public void beginTransactionAndSetAutoCommitTrueTest() {
         YdbConnection connection = r2dbc.connection();
 
         connection.beginTransaction()
@@ -75,7 +95,7 @@ public class TransactionIntegrationTest extends IntegrationBaseTest {
     }
 
     @Test
-    public void beginTransactionAndRollback() {
+    public void beginTransactionAndRollbackTest() {
         YdbConnection connection = r2dbc.connection();
 
         connection.beginTransaction()
@@ -93,7 +113,7 @@ public class TransactionIntegrationTest extends IntegrationBaseTest {
     }
 
     @Test
-    public void setAutoCommitFalseAndCommit() {
+    public void setAutoCommitFalseAndCommitTest() {
         YdbConnection connection = r2dbc.connection();
 
         connection.setAutoCommit(false)
@@ -112,7 +132,7 @@ public class TransactionIntegrationTest extends IntegrationBaseTest {
     }
 
     @Test
-    public void beginTransactionSetIsolationLevel() {
+    public void beginTransactionSetIsolationLevelTest() {
         YdbConnection connection = r2dbc.connection();
 
         connection.beginTransaction()
@@ -122,6 +142,58 @@ public class TransactionIntegrationTest extends IntegrationBaseTest {
         connection.setYdbTransactionIsolationLevel(YdbIsolationLevel.SNAPSHOT_READ_ONLY)
                 .as(StepVerifier::create)
                 .verifyError(IllegalStateException.class);
+    }
+
+    @Test
+    public void beginTransactionSetSameIsolationLevelTest() {
+        YdbConnection connection = r2dbc.connection();
+
+        connection.beginTransaction()
+                .as(StepVerifier::create)
+                .verifyComplete();
+
+        connection.setYdbTransactionIsolationLevel(connection.getYdbTransactionIsolationLevel())
+                .as(StepVerifier::create)
+                .verifyComplete();
+    }
+
+    @Test
+    public void setIsolationLevelTest() {
+        YdbConnection connection = r2dbc.connection();
+
+        Assertions.assertEquals(YdbIsolationLevel.SERIALIZABLE, connection.getYdbTransactionIsolationLevel());
+
+        connection.setYdbTransactionIsolationLevel(YdbIsolationLevel.SNAPSHOT_READ_ONLY)
+                .as(StepVerifier::create)
+                .verifyComplete();
+
+        Assertions.assertEquals(YdbIsolationLevel.SNAPSHOT_READ_ONLY, connection.getYdbTransactionIsolationLevel());
+    }
+
+    @Test
+    public void setReadOnlyFalseTest() {
+        YdbConnection connection = r2dbc.connection();
+
+        Assertions.assertEquals(YdbIsolationLevel.SERIALIZABLE, connection.getYdbTransactionIsolationLevel());
+
+        connection.setReadOnly(false)
+                .as(StepVerifier::create)
+                .verifyComplete();
+
+        Assertions.assertFalse(connection.isReadOnly());
+    }
+
+    @Test
+    public void setReadOnlyFalseFailTest() {
+        YdbConnection connection = r2dbc.connection();
+
+        connection.setYdbTransactionIsolationLevel(YdbIsolationLevel.SNAPSHOT_READ_ONLY)
+                .as(StepVerifier::create)
+                .verifyComplete();
+
+       connection.setReadOnly(false)
+               .as(StepVerifier::create)
+               .verifyError(IllegalArgumentException.class);
     }
 
     private static void simpleInsert(YdbConnection connection) {

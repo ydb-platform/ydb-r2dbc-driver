@@ -108,6 +108,15 @@ public final class InsideTransactionState implements YdbConnectionState {
     }
 
     @Override
+    public YdbConnectionState withReadOnly(boolean readOnly) {
+        if (ydbTxSettings.isReadOnly() == readOnly) {
+            return this;
+        }
+
+        throw new IllegalStateException("Can not change read only in active transaction");
+    }
+
+    @Override
     public YdbConnectionState close() {
         return CloseState.INSTANCE;
     }

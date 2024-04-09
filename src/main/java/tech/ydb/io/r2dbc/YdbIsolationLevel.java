@@ -24,11 +24,21 @@ import io.r2dbc.spi.TransactionDefinition;
  */
 public enum YdbIsolationLevel implements TransactionDefinition {
 
-    SNAPSHOT_READ_ONLY,
-    STALE_READ_ONLY,
-    ONLINE_INCONSISTENT_READ_ONLY,
-    ONLINE_CONSISTENT_READ_ONLY,
-    SERIALIZABLE;
+    SNAPSHOT_READ_ONLY(true),
+    STALE_READ_ONLY(true),
+    ONLINE_INCONSISTENT_READ_ONLY(true),
+    ONLINE_CONSISTENT_READ_ONLY(true),
+    SERIALIZABLE(false);
+
+    private final boolean readOnly;
+
+    YdbIsolationLevel(boolean readOnly) {
+        this.readOnly = readOnly;
+    }
+
+    public boolean isReadOnly() {
+        return readOnly;
+    }
 
     @Override
     public  <T> T getAttribute(Option<T> option) {
