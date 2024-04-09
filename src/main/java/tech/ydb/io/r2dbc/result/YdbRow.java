@@ -23,7 +23,7 @@ import tech.ydb.table.result.ResultSetReader;
 import tech.ydb.table.result.ValueReader;
 
 /**
- * @author Kirill Kurdyukov
+ * @author Egor Kuleshov
  */
 public final class YdbRow implements Row {
     private final ResultSetReader resultSetReader;

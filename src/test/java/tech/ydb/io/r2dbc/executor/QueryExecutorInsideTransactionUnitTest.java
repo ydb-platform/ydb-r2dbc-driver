@@ -63,7 +63,7 @@ public class QueryExecutorInsideTransactionUnitTest {
         when(session.executeSchemeQuery(any(), any())).thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
 
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.executeSchemaQuery("test")
                 .flatMap(YdbResult::getRowsUpdated)
@@ -90,7 +90,7 @@ public class QueryExecutorInsideTransactionUnitTest {
         ));
 
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
                 .flatMap(YdbResult::getRowsUpdated)
@@ -118,7 +118,7 @@ public class QueryExecutorInsideTransactionUnitTest {
         ));
 
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
                 .flatMap(YdbResult::getRowsUpdated)
@@ -134,7 +134,7 @@ public class QueryExecutorInsideTransactionUnitTest {
     public void beginTransactionTest() {
         Session session = mock(Session.class);
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.beginTransaction()
                 .as(StepVerifier::create)
@@ -151,7 +151,7 @@ public class QueryExecutorInsideTransactionUnitTest {
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
         when(session.commitTransaction(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.commitTransaction()
                 .as(StepVerifier::create)
@@ -168,7 +168,7 @@ public class QueryExecutorInsideTransactionUnitTest {
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
         when(session.commitTransaction(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Status.of(StatusCode.ABORTED)));
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.commitTransaction()
                 .as(StepVerifier::create)
@@ -184,7 +184,7 @@ public class QueryExecutorInsideTransactionUnitTest {
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
         when(session.rollbackTransaction(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.rollbackTransaction()
                 .as(StepVerifier::create)
@@ -201,7 +201,7 @@ public class QueryExecutorInsideTransactionUnitTest {
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
         when(session.rollbackTransaction(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Status.of(StatusCode.ABORTED)));
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.rollbackTransaction()
                 .as(StepVerifier::create)
@@ -215,7 +215,7 @@ public class QueryExecutorInsideTransactionUnitTest {
     public void setAutoCommitTrueTest() {
         Session session = mock(Session.class);
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
         when(session.commitTransaction(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
 
@@ -235,7 +235,7 @@ public class QueryExecutorInsideTransactionUnitTest {
     public void setAutoCommitFalseTest() {
         Session session = mock(Session.class);
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.setAutoCommit(false)
                 .as(StepVerifier::create)
@@ -249,7 +249,7 @@ public class QueryExecutorInsideTransactionUnitTest {
     public void closeTest() {
         Session session = mock(Session.class);
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
         when(session.commitTransaction(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
 

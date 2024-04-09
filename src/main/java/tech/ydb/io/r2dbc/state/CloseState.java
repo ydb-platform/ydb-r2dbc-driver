@@ -23,7 +23,7 @@ import tech.ydb.table.Session;
 import tech.ydb.table.transaction.TxControl;
 
 /**
- * @author Kirill Kurdyukov
+ * @author Egor Kuleshov
  */
 public class CloseState implements YdbConnectionState {
     public static final String CLOSED_STATE_MESSAGE = "Connection closed";

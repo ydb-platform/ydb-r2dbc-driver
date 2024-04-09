@@ -38,7 +38,7 @@ public class QueryExecutorCloseStateTest {
     @Test
     public void executeSchemaQueryTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.executeSchemaQuery("test")
                 .as(StepVerifier::create)
@@ -48,7 +48,7 @@ public class QueryExecutorCloseStateTest {
     @Test
     public void executeDataQueryTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.executeDataQuery("test", Params.empty(), List.of())
                 .as(StepVerifier::create)
@@ -58,7 +58,7 @@ public class QueryExecutorCloseStateTest {
     @Test
     public void beginTransactionTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.beginTransaction()
                 .as(StepVerifier::create)
@@ -68,7 +68,7 @@ public class QueryExecutorCloseStateTest {
     @Test
     public void commitTransactionTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.commitTransaction()
                 .as(StepVerifier::create)
@@ -78,7 +78,7 @@ public class QueryExecutorCloseStateTest {
     @Test
     public void rollbackTransactionTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.rollbackTransaction()
                 .as(StepVerifier::create)
@@ -88,7 +88,7 @@ public class QueryExecutorCloseStateTest {
     @Test
     public void setAutoCommitTrueTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.setAutoCommit(true)
                 .as(StepVerifier::create)
@@ -98,7 +98,7 @@ public class QueryExecutorCloseStateTest {
     @Test
     public void setAutoCommitFalseTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.setAutoCommit(false)
                 .as(StepVerifier::create)
@@ -108,7 +108,7 @@ public class QueryExecutorCloseStateTest {
     @Test
     public void closeTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutorImpl(ydbContext, state);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
         queryExecutor.close()
                 .as(StepVerifier::create)

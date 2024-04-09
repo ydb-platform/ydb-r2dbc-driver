@@ -30,19 +30,18 @@ import tech.ydb.io.r2dbc.query.YdbSqlParser;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 import tech.ydb.io.r2dbc.state.OutsideTransactionState;
 import tech.ydb.io.r2dbc.executor.QueryExecutor;
-import tech.ydb.io.r2dbc.executor.QueryExecutorImpl;
 import tech.ydb.io.r2dbc.statement.YdbDMLStatement;
 import tech.ydb.io.r2dbc.statement.YdbDDLStatement;
 import tech.ydb.io.r2dbc.statement.YdbStatement;
 
 /**
- * @author Kirill Kurdyukov
+ * @author Egor Kuleshov
  */
 public class YdbConnection implements Connection {
     private final QueryExecutor queryExecutor;
 
     public YdbConnection(YdbContext ydbContext) {
-        this.queryExecutor = new QueryExecutorImpl(ydbContext,
+        this.queryExecutor = new QueryExecutor(ydbContext,
                 new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings()));
     }
 

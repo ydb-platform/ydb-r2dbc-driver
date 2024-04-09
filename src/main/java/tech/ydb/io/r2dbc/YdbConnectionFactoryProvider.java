@@ -16,6 +16,8 @@
 
 package tech.ydb.io.r2dbc;
 
+import java.time.Duration;
+
 import com.google.common.base.Preconditions;
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import io.r2dbc.spi.ConnectionFactoryProvider;
@@ -35,9 +37,13 @@ public final class YdbConnectionFactoryProvider implements ConnectionFactoryProv
 
     private static final int SESSION_POOL_DEFAULT_MIN_SIZE = 10;
     private static final int SESSION_POOL_DEFAULT_MAX_SIZE = 100;
+    private static final Duration SESSION_KEEP_ALIVE_DEFAULT_TIME = Duration.ofMinutes(5);
 
     private static final Option<Integer> SESSION_POOL_MIN_SIZE = Option.valueOf("sessionPoolMinSize");
     private static final Option<Integer> SESSION_POOL_MAX_SIZE = Option.valueOf("sessionPoolMaxSize");
+    private static final Option<Duration> SESSION_KEEP_ALIVE_TIME = Option.valueOf("sessionKeepAliveTime");
+    private static final Option<Duration> SESSION_MAX_IDLE_TIME = Option.valueOf("sessionMaxIdleTime");
+    private static final Option<Boolean> KEEP_QUERY_TEXT = Option.valueOf("keepQueryText");
     private static final Option<GrpcCompression> GRPC_COMPRESSION = Option.valueOf("grpcCompression");
     private static final Option<BalancingSettings.Policy> BALANCING_POLICY = Option.valueOf("balancingPolicy");
     private static final Option<byte[]> SECURE_CONNECTION_CERTIFICATE = Option.valueOf("secureConnectionCertificate");
@@ -66,14 +72,18 @@ public final class YdbConnectionFactoryProvider implements ConnectionFactoryProv
             }
         });
 
-        TableClient tableClient = TableClient.newClient(grpcTransportBuilder.build())
+        TableClient.Builder tableClientBuilder = TableClient.newClient(grpcTransportBuilder.build())
                 .sessionPoolSize(
                         optionExtractor.extractOrDefault(SESSION_POOL_MIN_SIZE, SESSION_POOL_DEFAULT_MIN_SIZE),
                         optionExtractor.extractOrDefault(SESSION_POOL_MAX_SIZE, SESSION_POOL_DEFAULT_MAX_SIZE)
-                )
-                .build();
+                ).sessionKeepAliveTime(
+                        optionExtractor.extractOrDefault(SESSION_KEEP_ALIVE_TIME, SESSION_KEEP_ALIVE_DEFAULT_TIME)
+                );
 
-        return new YdbConnectionFactory(new YdbContext(tableClient));
+        optionExtractor.extractThenConsume(SESSION_MAX_IDLE_TIME, tableClientBuilder::sessionMaxIdleTime);
+        optionExtractor.extractThenConsume(KEEP_QUERY_TEXT, tableClientBuilder::keepQueryText);
+
+        return new YdbConnectionFactory(new YdbContext(tableClientBuilder.build()));
     }
 
     @Override
