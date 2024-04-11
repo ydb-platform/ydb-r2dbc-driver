@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc.executor;
+package tech.ydb.io.r2dbc;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -25,13 +25,11 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.ydb.core.Result;
 import tech.ydb.core.UnexpectedResultException;
-import tech.ydb.io.r2dbc.YdbContext;
 import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.io.r2dbc.state.CloseState;
 import tech.ydb.io.r2dbc.state.InsideTransactionState;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
-import tech.ydb.io.r2dbc.YdbTxSettings;
 import tech.ydb.io.r2dbc.util.ResultExtractor;
 import tech.ydb.table.query.DataQueryResult;
 import tech.ydb.table.query.Params;
@@ -66,31 +64,28 @@ public class QueryExecutor {
                                             ResultExtractor.extract(dataQueryResult);
 
                                     return dataQueryResultMono.flatMapMany(result -> {
-                                                List<YdbResult> results = new ArrayList<>();
-                                                for (int opIndex = 0, resSetIndex = 0; opIndex < operationTypes.size(); opIndex++) {
-                                                    results.add(switch (operationTypes.get(opIndex)) {
-                                                        case SELECT -> new YdbResult(result.getResultSet(resSetIndex++));
-                                                        case UPDATE -> YdbResult.UPDATE_RESULT;
-                                                        case SCHEME -> throw new IllegalStateException("DDL operation" +
-                                                                " not" +
-                                                                " support in" +
-                                                                " " +
-                                                                "executeDataQuery");
-                                                    });
-                                                }
-
-                                                return Flux.fromIterable(results);
-                                            }).doOnComplete(() -> {
-                                                YdbConnectionState nextState = connectionState.withDataQuery(
-                                                        dataQueryResult.getValue().getTxId(),
-                                                        session
+                                        List<YdbResult> results = new ArrayList<>();
+                                        for (int opIndex = 0, resSetIndex = 0; opIndex < operationTypes.size(); opIndex++) {
+                                            results.add(switch (operationTypes.get(opIndex)) {
+                                                case SELECT -> new YdbResult(result.getResultSet(resSetIndex++));
+                                                case UPDATE -> YdbResult.UPDATE_RESULT;
+                                                case SCHEME -> throw new IllegalStateException(
+                                                        "DDL operation not support in executeDataQuery"
                                                 );
-                                                if (!nextState.isInTransaction()) {
-                                                    session.close();
-                                                }
-                                                updateState(nextState);
-                                            }).doOnError((unused) -> session.close())
-                                            .doOnCancel(session::close);
+                                            });
+                                        }
+
+                                        return Flux.fromIterable(results);
+                                    }).doOnComplete(() -> {
+                                        YdbConnectionState nextState = connectionState.withDataQuery(
+                                                dataQueryResult.getValue().getTxId(),
+                                                session
+                                        );
+                                        if (!nextState.isInTransaction()) {
+                                            session.close();
+                                        }
+                                        updateState(nextState);
+                                    });
                                 })
                 )
         );
@@ -233,21 +228,27 @@ public class QueryExecutor {
     }
 
     private <T> Mono<T> monoWithState(Function<YdbConnectionState, Mono<T>> function) {
-        final YdbConnectionState currentYdbConnectionState = ydbConnectionState;
-        if (currentYdbConnectionState.isClosed()) {
-            return Mono.error(new IllegalStateException(CloseState.CLOSED_STATE_MESSAGE));
-        }
+        return Mono.defer(() -> {
+            final YdbConnectionState currentYdbConnectionState = ydbConnectionState;
+            if (currentYdbConnectionState.isClosed()) {
+                return Mono.error(new IllegalStateException(CloseState.CLOSED_STATE_MESSAGE));
+            }
 
-        return function.apply(currentYdbConnectionState);
+            return function.apply(currentYdbConnectionState)
+                    .as(MonoDiscardOnCancel::new);
+        });
     }
 
     private <T> Flux<T> fluxWithState(Function<YdbConnectionState, Flux<T>> function) {
-        final YdbConnectionState currentYdbConnectionState = ydbConnectionState;
-        if (currentYdbConnectionState.isClosed()) {
-            return Flux.error(new IllegalStateException(CloseState.CLOSED_STATE_MESSAGE));
-        }
+        return Flux.defer(() -> {
+            final YdbConnectionState currentYdbConnectionState = ydbConnectionState;
+            if (currentYdbConnectionState.isClosed()) {
+                return Flux.error(new IllegalStateException(CloseState.CLOSED_STATE_MESSAGE));
+            }
 
-        return function.apply(currentYdbConnectionState);
+            return function.apply(currentYdbConnectionState)
+                    .as(FluxDiscardOnCancel::new);
+        });
     }
 
     private <T extends RequestSettings<?>> T withStatementTimeout(T settings) {

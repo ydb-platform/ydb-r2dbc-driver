@@ -19,7 +19,7 @@ package tech.ydb.io.r2dbc.statement;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.ydb.io.r2dbc.query.YdbQuery;
-import tech.ydb.io.r2dbc.executor.QueryExecutor;
+import tech.ydb.io.r2dbc.QueryExecutor;
 
 import static org.mockito.Mockito.mock;
 

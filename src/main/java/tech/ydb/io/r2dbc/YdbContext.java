@@ -36,7 +36,6 @@ public class YdbContext {
         this.defaultYdbTxSettings = defaultYdbTxSettings;
     }
 
-
     public YdbContext(TableClient tableClient) {
         this(tableClient, Duration.ofSeconds(5), Duration.ofSeconds(2), YdbTxSettings.DEFAULT);
     }

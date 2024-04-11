@@ -27,6 +27,7 @@ import tech.ydb.core.Result;
 import tech.ydb.core.Status;
 import tech.ydb.core.StatusCode;
 import tech.ydb.core.UnexpectedResultException;
+import tech.ydb.io.r2dbc.QueryExecutor;
 import tech.ydb.io.r2dbc.YdbContext;
 import tech.ydb.io.r2dbc.YdbIsolationLevel;
 import tech.ydb.io.r2dbc.YdbTxSettings;
@@ -97,6 +98,34 @@ public class QueryExecutorInsideTransactionUnitTest {
                 .as(StepVerifier::create)
                 .expectNext(-1L)
                 .verifyComplete();
+
+        Assertions.assertEquals(state, queryExecutor.getCurrentState());
+        Mockito.verify(session, never()).close();
+    }
+
+    @Test
+    public void executeDataQueryCancelTest() {
+        Session session = mock(Session.class);
+        when(session.executeDataQuery(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(
+                Result.success(new DataQueryResult(
+                                YdbTable.ExecuteQueryResult.newBuilder()
+                                        .setTxMeta(YdbTable.TransactionMeta.newBuilder().setId(txId).build())
+                                        .addResultSets(ValueProtos.ResultSet
+                                                .newBuilder()
+                                                .getDefaultInstanceForType())
+                                        .build()
+                        )
+                )
+        ));
+
+        YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
+
+        queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
+                .flatMap(YdbResult::getRowsUpdated)
+                .as(StepVerifier::create)
+                .thenCancel()
+                .verify();
 
         Assertions.assertEquals(state, queryExecutor.getCurrentState());
         Mockito.verify(session, never()).close();

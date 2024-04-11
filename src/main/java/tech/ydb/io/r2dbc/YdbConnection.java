@@ -29,7 +29,6 @@ import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.query.YdbSqlParser;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 import tech.ydb.io.r2dbc.state.OutsideTransactionState;
-import tech.ydb.io.r2dbc.executor.QueryExecutor;
 import tech.ydb.io.r2dbc.statement.YdbDMLStatement;
 import tech.ydb.io.r2dbc.statement.YdbDDLStatement;
 import tech.ydb.io.r2dbc.statement.YdbStatement;

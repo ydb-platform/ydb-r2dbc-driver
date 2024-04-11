@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
+import tech.ydb.io.r2dbc.QueryExecutor;
 import tech.ydb.io.r2dbc.YdbContext;
 import tech.ydb.io.r2dbc.state.CloseState;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;

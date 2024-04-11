@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.ydb.io.r2dbc.query.QueryType;
 import tech.ydb.io.r2dbc.query.YdbQuery;
-import tech.ydb.io.r2dbc.executor.QueryExecutor;
+import tech.ydb.io.r2dbc.QueryExecutor;
 import tech.ydb.io.r2dbc.type.YdbType;
 import tech.ydb.table.values.PrimitiveType;
 import tech.ydb.table.values.PrimitiveValue;
