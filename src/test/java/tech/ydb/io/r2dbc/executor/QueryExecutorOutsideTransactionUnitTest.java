@@ -154,6 +154,91 @@ public class QueryExecutorOutsideTransactionUnitTest {
     }
 
     @Test
+    public void executeDataQueryErrorTest() {
+        Session session = mock(Session.class);
+        when(session.executeDataQuery(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(
+                Result.fail(Status.of(StatusCode.CANCELLED))
+        ));
+        when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
+
+        YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
+
+        queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
+                .flatMap(io.r2dbc.spi.Result::getRowsUpdated)
+                .as(StepVerifier::create)
+                .verifyError();
+
+        Assertions.assertEquals(state, queryExecutor.getCurrentState());
+        Mockito.verify(session).executeDataQuery(eq("test"), eq(state.txControl()), eq(Params.empty()), any());
+        Mockito.verify(session).close();
+    }
+
+
+    @Test
+    public void executeDataQueryErrorCancelTest() {
+        Session session = mock(Session.class);
+        when(session.executeDataQuery(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(
+                Result.fail(Status.of(StatusCode.ABORTED))
+        ));
+        when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
+
+        YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
+
+        queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
+                .flatMap(io.r2dbc.spi.Result::getRowsUpdated)
+                .as(StepVerifier::create)
+                .thenCancel()
+                .verify();
+
+        Assertions.assertEquals(state, queryExecutor.getCurrentState());
+        Mockito.verify(session).executeDataQuery(eq("test"), eq(state.txControl()), eq(Params.empty()), any());
+        Mockito.verify(session).close();
+    }
+
+    @Test
+    public void executeDataQueryExceptionTest() {
+        Session session = mock(Session.class);
+        when(session.executeDataQuery(any(), any(), any(), any())).thenThrow(new RuntimeException());
+
+        when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
+
+        YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
+
+        queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
+                .flatMap(io.r2dbc.spi.Result::getRowsUpdated)
+                .as(StepVerifier::create)
+                .verifyError();
+
+        Assertions.assertEquals(state, queryExecutor.getCurrentState());
+        Mockito.verify(session).executeDataQuery(eq("test"), eq(state.txControl()), eq(Params.empty()), any());
+        Mockito.verify(session).close();
+    }
+
+    @Test
+    public void executeDataQueryExceptionCancelTest() {
+        Session session = mock(Session.class);
+        when(session.executeDataQuery(any(), any(), any(), any())).thenThrow(new RuntimeException());
+
+        when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
+
+        YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
+
+        queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
+                .flatMap(io.r2dbc.spi.Result::getRowsUpdated)
+                .as(StepVerifier::create)
+                .thenCancel()
+                .verify();
+
+        Assertions.assertEquals(state, queryExecutor.getCurrentState());
+        Mockito.verify(session).executeDataQuery(eq("test"), eq(state.txControl()), eq(Params.empty()), any());
+        Mockito.verify(session).close();
+    }
+
+    @Test
     public void executeDataQueryWithTxTest() {
         Session session = mock(Session.class);
         when(session.executeDataQuery(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(

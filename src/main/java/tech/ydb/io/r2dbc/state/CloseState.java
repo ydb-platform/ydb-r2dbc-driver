@@ -88,6 +88,11 @@ public class CloseState implements YdbConnectionState {
     }
 
     @Override
+    public void withError(Session session) {
+        throw new IllegalStateException(CLOSED_STATE_MESSAGE);
+    }
+
+    @Override
     public YdbConnectionState close() {
         throw new IllegalStateException(CLOSED_STATE_MESSAGE);
     }

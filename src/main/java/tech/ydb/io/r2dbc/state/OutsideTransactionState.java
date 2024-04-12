@@ -106,6 +106,11 @@ public class OutsideTransactionState implements YdbConnectionState {
     }
 
     @Override
+    public void withError(Session session) {
+        session.close();
+    }
+
+    @Override
     public YdbConnectionState close() {
         return CloseState.INSTANCE;
     }

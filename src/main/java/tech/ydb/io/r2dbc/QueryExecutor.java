@@ -31,6 +31,7 @@ import tech.ydb.io.r2dbc.state.CloseState;
 import tech.ydb.io.r2dbc.state.InsideTransactionState;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
 import tech.ydb.io.r2dbc.util.ResultExtractor;
+import tech.ydb.table.Session;
 import tech.ydb.table.query.DataQueryResult;
 import tech.ydb.table.query.Params;
 import tech.ydb.table.settings.BeginTxSettings;
@@ -55,8 +56,8 @@ public class QueryExecutor {
     }
 
     public Flux<YdbResult> executeDataQuery(String yql, Params params, List<OperationType> operationTypes) {
-        return fluxWithState(connectionState -> connectionState.getSession()
-                .flatMapMany(session ->
+        return fluxWithState(connectionState ->
+                fluxWithSession(connectionState, session ->
                         Mono.fromFuture(session.executeDataQuery(yql, connectionState.txControl(), params,
                                         withStatementTimeout(new ExecuteDataQuerySettings())))
                                 .flatMapMany(dataQueryResult -> {
@@ -86,8 +87,7 @@ public class QueryExecutor {
                                         }
                                         updateState(nextState);
                                     });
-                                })
-                )
+                                }))
         );
     }
 
@@ -98,21 +98,16 @@ public class QueryExecutor {
                 return Flux.error(new IllegalStateException(SCHEME_QUERY_INSIDE_TRANSACTION));
             }
 
-            return connectionState.getSession()
-                    .flatMap(session -> {
-                        try (session) {
-                            return Mono.fromFuture(session.executeSchemeQuery(yql,
-                                    withStatementTimeout(new ExecuteSchemeQuerySettings())));
-                        } catch (Throwable t) {
-                            return Mono.error(t);
-                        }
-                    }).flatMap(status -> {
+            return fluxWithSession(connectionState, session -> Mono.fromFuture(session.executeSchemeQuery(yql,
+                            withStatementTimeout(new ExecuteSchemeQuerySettings())))
+                    .flatMap(status -> {
                         if (!status.isSuccess()) {
                             return Mono.error(new UnexpectedResultException("Schema query failed", status));
                         }
 
                         return Mono.just(YdbResult.DDL_RESULT);
-                    }).flux();
+                    }).flux().doOnComplete(session::close)
+            );
         });
     }
 
@@ -131,18 +126,15 @@ public class QueryExecutor {
         }
         YdbTxSettings transactionSettings = ydbTxSettings.withAutoCommit(false);
 
-        return currentYdbConnectionState.getSession()
-                .flatMap(session -> Mono.fromFuture(session.beginTransaction(
-                                transactionSettings.getMode(),
-                                withStatementTimeout(new BeginTxSettings())))
-                        .map(Result::getValue)
-                        .doOnSuccess(transaction -> updateState(currentYdbConnectionState.withBeginTransaction(
-                                transaction.getId(),
-                                session,
-                                transactionSettings)))
-                        .doOnError(unused -> session.close())
-                        .doOnCancel(session::close))
-                .then();
+        return monoWithSession(currentYdbConnectionState, session -> Mono.fromFuture(session.beginTransaction(
+                        transactionSettings.getMode(),
+                        withStatementTimeout(new BeginTxSettings())))
+                .map(Result::getValue)
+                .doOnSuccess(transaction -> updateState(currentYdbConnectionState.withBeginTransaction(
+                        transaction.getId(),
+                        session,
+                        transactionSettings)))
+                .then());
     }
 
     public Mono<Void> commitTransaction() {
@@ -153,13 +145,11 @@ public class QueryExecutor {
             }
             final InsideTransactionState insideTransactionState = (InsideTransactionState) connectionState;
 
-            return connectionState.getSession()
-                    .flatMap(session -> Mono.fromFuture(session.commitTransaction(
-                                    insideTransactionState.getId(),
-                                    withStatementTimeout(new CommitTxSettings())))
-                            .flatMap(ResultExtractor::extract)
-                            .doOnSuccess(unused -> updateState(connectionState.withCommitTransaction())))
-                    .then();
+            return monoWithSession(connectionState, session -> Mono.fromFuture(session.commitTransaction(
+                            insideTransactionState.getId(),
+                            withStatementTimeout(new CommitTxSettings())))
+                    .flatMap(ResultExtractor::extract)
+                    .doOnSuccess(unused -> updateState(connectionState.withCommitTransaction())).then());
         });
     }
 
@@ -228,17 +218,16 @@ public class QueryExecutor {
     }
 
     private <T> Mono<T> monoWithState(Function<YdbConnectionState, Mono<T>> function) {
-        return Mono.defer(() -> {
-            final YdbConnectionState currentYdbConnectionState = ydbConnectionState;
-            if (currentYdbConnectionState.isClosed()) {
-                return Mono.error(new IllegalStateException(CloseState.CLOSED_STATE_MESSAGE));
-            }
-
-            return function.apply(currentYdbConnectionState)
-                    .as(MonoDiscardOnCancel::new);
-        });
+        return fluxWithState(function.andThen(Mono::flux)).next();
     }
 
+    /**
+     * Get and fix connection state for one operation
+     *
+     * @param function that will be applied to state
+     * @return Flux result
+     * @param <T> Param of flux
+     */
     private <T> Flux<T> fluxWithState(Function<YdbConnectionState, Flux<T>> function) {
         return Flux.defer(() -> {
             final YdbConnectionState currentYdbConnectionState = ydbConnectionState;
@@ -246,9 +235,34 @@ public class QueryExecutor {
                 return Flux.error(new IllegalStateException(CloseState.CLOSED_STATE_MESSAGE));
             }
 
-            return function.apply(currentYdbConnectionState)
-                    .as(FluxDiscardOnCancel::new);
+            return function.apply(currentYdbConnectionState);
         });
+    }
+
+    private <T> Mono<T> monoWithSession(YdbConnectionState connectionState, Function<Session, Mono<T>> function) {
+        return fluxWithSession(connectionState, function.andThen(Mono::flux)).next();
+    }
+
+    /**
+     * Uses the session carefully and closes it if necessary
+     *
+     * @param connectionState the state from which the session is taken
+     * @param function that will be applied to session
+     * @return Flux result
+     * @param <T> Param of flux
+     */
+    private <T> Flux<T> fluxWithSession(YdbConnectionState connectionState, Function<Session, Flux<T>> function) {
+        return Flux.defer(() -> connectionState.getSession()
+                .flatMapMany(session -> {
+                    try {
+                        return function.apply(session)
+                                .doOnError(unused -> connectionState.withError(session));
+                    } catch (Throwable t) {
+                        connectionState.withError(session);
+
+                        return Flux.error(t);
+                    }
+                }).as(FluxDiscardOnCancel::new));
     }
 
     private <T extends RequestSettings<?>> T withStatementTimeout(T settings) {

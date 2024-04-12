@@ -117,6 +117,10 @@ public final class InsideTransactionState implements YdbConnectionState {
     }
 
     @Override
+    public void withError(Session session) {
+    }
+
+    @Override
     public YdbConnectionState close() {
         return CloseState.INSTANCE;
     }

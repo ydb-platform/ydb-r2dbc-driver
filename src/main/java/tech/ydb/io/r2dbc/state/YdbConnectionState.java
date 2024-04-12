@@ -48,6 +48,8 @@ public interface YdbConnectionState {
 
     YdbConnectionState withReadOnly(boolean readOnly);
 
+    void withError(Session session);
+
     YdbConnectionState close();
 
     boolean isClosed();
