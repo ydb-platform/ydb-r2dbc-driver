@@ -24,7 +24,6 @@ import reactor.core.publisher.FluxOperator;
  * @author Egor Kuleshov
  */
 class FluxDiscardOnCancel<T> extends FluxOperator<T, T> {
-
     FluxDiscardOnCancel(Flux<? extends T> source) {
         super(source);
     }

@@ -29,9 +29,7 @@ import reactor.util.context.Context;
  */
 public class DiscardOnCancelSubscriber<T> extends AtomicBoolean implements CoreSubscriber<T>, Subscription {
     final CoreSubscriber<T> actual;
-
     final Context ctx;
-
     Subscription s;
 
     DiscardOnCancelSubscriber(CoreSubscriber<T> actual) {
@@ -46,7 +44,6 @@ public class DiscardOnCancelSubscriber<T> extends AtomicBoolean implements CoreS
 
     @Override
     public void onSubscribe(Subscription s) {
-
         if (reactor.core.publisher.Operators.validate(this.s, s)) {
             this.s = s;
             this.actual.onSubscribe(this);
@@ -55,7 +52,6 @@ public class DiscardOnCancelSubscriber<T> extends AtomicBoolean implements CoreS
 
     @Override
     public void onNext(T t) {
-
         if (this.get()) {
             reactor.core.publisher.Operators.onDiscard(t, this.ctx);
             return;
@@ -85,7 +81,6 @@ public class DiscardOnCancelSubscriber<T> extends AtomicBoolean implements CoreS
 
     @Override
     public void cancel() {
-
         if (compareAndSet(false, true)) {
             this.s.request(Long.MAX_VALUE);
         }
