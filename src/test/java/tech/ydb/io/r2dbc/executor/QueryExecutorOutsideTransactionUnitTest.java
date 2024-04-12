@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import tech.ydb.core.Result;
 import tech.ydb.core.Status;
@@ -198,8 +199,11 @@ public class QueryExecutorOutsideTransactionUnitTest {
         when(session.beginTransaction(any(), any())).thenReturn(CompletableFuture.completedFuture(Result.success(transaction)));
         QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
 
-        queryExecutor.beginTransaction()
-                .as(StepVerifier::create)
+        Mono<Void> beginTransactionMono = queryExecutor.beginTransaction();
+
+        Assertions.assertFalse(queryExecutor.getCurrentState().isInTransaction());
+
+        beginTransactionMono.as(StepVerifier::create)
                 .verifyComplete();
 
         Assertions.assertTrue(queryExecutor.getCurrentState().isInTransaction());
@@ -346,5 +350,23 @@ public class QueryExecutorOutsideTransactionUnitTest {
                 .as(StepVerifier::create)
                 .verifyError(RuntimeException.class);
         Mockito.verify(session).close();
+    }
+
+    @Test
+    public void updateStateTest() {
+        YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
+        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
+
+        Assertions.assertFalse(queryExecutor.getCurrentState().getYdbTxSettings().isReadOnly());
+        Mono<Void> updateState = queryExecutor.updateState(state1 -> state1.withReadOnly(true));
+        Assertions.assertFalse(queryExecutor.getCurrentState().getYdbTxSettings().isReadOnly());
+
+        updateState
+                .as(StepVerifier::create)
+                .verifyComplete();
+        Assertions.assertTrue(queryExecutor.getCurrentState().getYdbTxSettings().isReadOnly());
+
+        queryExecutor.updateState(state1 -> state1.withReadOnly(false)).as(StepVerifier::create)
+                .verifyComplete();
     }
 }
