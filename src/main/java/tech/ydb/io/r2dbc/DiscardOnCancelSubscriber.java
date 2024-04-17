@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.reactivestreams.Subscription;
 import reactor.core.CoreSubscriber;
+import reactor.core.publisher.Operators;
 import reactor.util.context.Context;
 
 /**
@@ -30,7 +31,7 @@ import reactor.util.context.Context;
 public class DiscardOnCancelSubscriber<T> extends AtomicBoolean implements CoreSubscriber<T>, Subscription {
     final CoreSubscriber<T> actual;
     final Context ctx;
-    Subscription s;
+    volatile Subscription s;
 
     DiscardOnCancelSubscriber(CoreSubscriber<T> actual) {
         this.actual = actual;
@@ -44,7 +45,7 @@ public class DiscardOnCancelSubscriber<T> extends AtomicBoolean implements CoreS
 
     @Override
     public void onSubscribe(Subscription s) {
-        if (reactor.core.publisher.Operators.validate(this.s, s)) {
+        if (Operators.validate(this.s, s)) {
             this.s = s;
             this.actual.onSubscribe(this);
         }
@@ -53,7 +54,7 @@ public class DiscardOnCancelSubscriber<T> extends AtomicBoolean implements CoreS
     @Override
     public void onNext(T t) {
         if (this.get()) {
-            reactor.core.publisher.Operators.onDiscard(t, this.ctx);
+            Operators.onDiscard(t, this.ctx);
             return;
         }
 
@@ -85,5 +86,4 @@ public class DiscardOnCancelSubscriber<T> extends AtomicBoolean implements CoreS
             this.s.request(Long.MAX_VALUE);
         }
     }
-
 }
