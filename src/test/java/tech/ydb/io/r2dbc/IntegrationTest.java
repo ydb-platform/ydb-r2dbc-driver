@@ -19,42 +19,22 @@ package tech.ydb.io.r2dbc;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
-import tech.ydb.io.r2dbc.helper.R2dbcConnectionExtension;
 import tech.ydb.io.r2dbc.result.YdbResult;
-import tech.ydb.test.junit5.YdbHelperExtension;
 
 /**
  * @author Egor Kuleshov
  */
-public class IntegrationTest {
-    private static final String CREATE_TABLE = "create table t1 (id Int32, value text, primary key (id));";
-    private static final String DROP_TABLE = "drop table t1;";
-    @RegisterExtension
-    private static final YdbHelperExtension ydb = new YdbHelperExtension();
-    @RegisterExtension
-    private final R2dbcConnectionExtension r2dbc = new R2dbcConnectionExtension(ydb);
-
+public class IntegrationTest extends IntegrationBaseTest {
     @BeforeEach
-    public void createTable() {
-        r2dbc.connection().createStatement(CREATE_TABLE)
-                .execute()
-                .flatMap(YdbResult::getRowsUpdated)
-                .as(StepVerifier::create)
-                .expectNext(0L)
-                .verifyComplete();
+    public void setUp() {
+        createTable();
     }
 
     @AfterEach
-    public void dropTable() {
-        r2dbc.connection().createStatement(DROP_TABLE)
-                .execute()
-                .flatMap(YdbResult::getRowsUpdated)
-                .as(StepVerifier::create)
-                .expectNext(0L)
-                .verifyComplete();
+    public void cleanUp() {
+        dropTable();
     }
 
     @Test
@@ -103,7 +83,7 @@ public class IntegrationTest {
     }
 
     @Test
-    public void UpsertAndSelectTable() {
+    public void upsertAndSelectTable() {
         upsertData(r2dbc.connection())
                 .thenMany(r2dbc.connection().createStatement("select * from t1 order by id asc;")
                         .execute())

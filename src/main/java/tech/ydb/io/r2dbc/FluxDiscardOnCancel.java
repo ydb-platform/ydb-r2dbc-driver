@@ -16,28 +16,20 @@
 
 package tech.ydb.io.r2dbc;
 
-import io.r2dbc.spi.ConnectionFactory;
-import io.r2dbc.spi.ConnectionFactoryMetadata;
-import reactor.core.publisher.Mono;
+import reactor.core.CoreSubscriber;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxOperator;
 
 /**
- * @author Kirill Kurdyukov
+ * @author Egor Kuleshov
  */
-public final class YdbConnectionFactory implements ConnectionFactory {
-
-    private final YdbContext ydbContext;
-
-    public YdbConnectionFactory(YdbContext ydbContext) {
-        this.ydbContext = ydbContext;
+class FluxDiscardOnCancel<T> extends FluxOperator<T, T> {
+    FluxDiscardOnCancel(Flux<? extends T> source) {
+        super(source);
     }
 
     @Override
-    public Mono<YdbConnection> create() {
-        return Mono.just(new YdbConnection(ydbContext));
-    }
-
-    @Override
-    public ConnectionFactoryMetadata getMetadata() {
-        return YdbConnectionFactoryMetadata.INSTANCE;
+    public void subscribe(CoreSubscriber<? super T> actual) {
+        this.source.subscribe(new DiscardOnCancelSubscriber<>(actual));
     }
 }

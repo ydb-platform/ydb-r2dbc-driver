@@ -19,7 +19,7 @@ package tech.ydb.io.r2dbc.statement;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.ydb.io.r2dbc.query.YdbQuery;
-import tech.ydb.io.r2dbc.state.YdbConnectionState;
+import tech.ydb.io.r2dbc.QueryExecutor;
 
 import static org.mockito.Mockito.mock;
 
@@ -30,9 +30,9 @@ public class YdbDDLStatementTest {
     @Test
     public void testAdd() {
         YdbQuery query = mock(YdbQuery.class);
-        YdbConnectionState ydbConnectionState = mock(YdbConnectionState.class);
+        QueryExecutor queryExecutor = mock(QueryExecutor.class);
 
-        YdbStatement statement = new YdbDDLStatement(query, ydbConnectionState);
+        YdbStatement statement = new YdbDDLStatement(query, queryExecutor);
 
         Assertions.assertThrows(UnsupportedOperationException.class,
                 statement::add);
@@ -41,9 +41,9 @@ public class YdbDDLStatementTest {
     @Test
     public void testBind() {
         YdbQuery query = mock(YdbQuery.class);
-        YdbConnectionState ydbConnectionState = mock(YdbConnectionState.class);
+        QueryExecutor queryExecutor = mock(QueryExecutor.class);
 
-        YdbStatement statement = new YdbDDLStatement(query, ydbConnectionState);
+        YdbStatement statement = new YdbDDLStatement(query, queryExecutor);
 
         Assertions.assertThrows(UnsupportedOperationException.class,
                 () -> statement.bind(0, 123));
@@ -54,9 +54,9 @@ public class YdbDDLStatementTest {
     @Test
     public void testBindNull() {
         YdbQuery query = mock(YdbQuery.class);
-        YdbConnectionState ydbConnectionState = mock(YdbConnectionState.class);
+        QueryExecutor queryExecutor = mock(QueryExecutor.class);
 
-        YdbStatement statement = new YdbDDLStatement(query, ydbConnectionState);
+        YdbStatement statement = new YdbDDLStatement(query, queryExecutor);
 
         Assertions.assertThrows(UnsupportedOperationException.class,
                 () -> statement.bindNull(0, Integer.class));
