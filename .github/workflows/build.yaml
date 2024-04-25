@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    name: Build YDB Examples
+    name: Build YDB R2DBC Driver
     runs-on: ubuntu-latest
 
     strategy:
