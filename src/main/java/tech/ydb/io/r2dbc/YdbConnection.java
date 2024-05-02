@@ -24,48 +24,88 @@ import io.r2dbc.spi.TransactionDefinition;
 import io.r2dbc.spi.ValidationDepth;
 
 import java.time.Duration;
+import java.util.List;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.query.YdbSqlParser;
 import tech.ydb.io.r2dbc.query.YdbQuery;
+import tech.ydb.io.r2dbc.state.NextStateResult;
+import tech.ydb.io.r2dbc.result.YdbResult;
+import tech.ydb.io.r2dbc.state.CloseState;
 import tech.ydb.io.r2dbc.state.OutsideTransactionState;
+import tech.ydb.io.r2dbc.state.YdbConnectionState;
 import tech.ydb.io.r2dbc.statement.YdbDMLStatement;
 import tech.ydb.io.r2dbc.statement.YdbDDLStatement;
 import tech.ydb.io.r2dbc.statement.YdbStatement;
+import tech.ydb.table.query.Params;
 
 /**
  * @author Egor Kuleshov
  */
 public class YdbConnection implements Connection {
-    private final QueryExecutor queryExecutor;
+    private volatile YdbConnectionState ydbConnectionState;
 
     public YdbConnection(YdbContext ydbContext) {
-        this.queryExecutor = new QueryExecutor(ydbContext,
-                new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings()));
+        this.ydbConnectionState = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
+    }
+
+    public YdbConnection(YdbConnectionState ydbConnectionState) {
+        this.ydbConnectionState = ydbConnectionState;
+    }
+
+    public Flux<YdbResult> executeDataQuery(String yql, Params params, List<OperationType> operationTypes) {
+        return ydbConnectionState
+                .executeDataQuery(yql, params, operationTypes)
+                .doOnSuccess(fluxSessionResult -> updateState(fluxSessionResult.getNextState()))
+                .flatMapMany(NextStateResult::getResult);
+    }
+
+    public Flux<YdbResult> executeSchemaQuery(String yql) {
+        return ydbConnectionState.executeSchemaQuery(yql);
     }
 
     @Override
     public Mono<Void> beginTransaction() {
-        return queryExecutor.beginTransaction();
+        final YdbConnectionState connectionState = ydbConnectionState;
+        if (connectionState instanceof CloseState) {
+            return Mono.error(new IllegalStateException(CloseState.CLOSED_STATE_MESSAGE));
+        }
+
+        return beginTransaction(connectionState, connectionState.getYdbTxSettings());
     }
 
     @Override
     public Mono<Void> beginTransaction(TransactionDefinition definition) {
         try {
-            return queryExecutor.beginTransaction(new YdbTxSettings(definition));
+            return beginTransaction(ydbConnectionState, new YdbTxSettings(definition));
         } catch (IllegalArgumentException exception) {
             return Mono.error(exception);
         }
     }
 
+    private Mono<Void> beginTransaction(YdbConnectionState currentYdbConnectionState, YdbTxSettings ydbTxSettings) {
+        return currentYdbConnectionState
+                .beginTransaction(ydbTxSettings)
+                .doOnSuccess(this::updateState)
+                .then();
+    }
+
     @Override
     public Mono<Void> close() {
-        return queryExecutor.close();
+        return ydbConnectionState
+                .close()
+                .doOnSuccess(unused -> updateState(CloseState.INSTANCE))
+                .then();
     }
 
     @Override
     public Mono<Void> commitTransaction() {
-        return queryExecutor.commitTransaction();
+        return ydbConnectionState
+                .commitTransaction()
+                .doOnSuccess(this::updateState)
+                .then();
     }
 
     @Override
@@ -83,14 +123,14 @@ public class YdbConnection implements Connection {
         YdbQuery query = YdbSqlParser.parse(sql);
 
         return switch (query.type()) {
-            case DML -> new YdbDMLStatement(query, queryExecutor);
-            case DDL -> new YdbDDLStatement(query, queryExecutor);
+            case DML -> new YdbDMLStatement(query, this);
+            case DDL -> new YdbDDLStatement(query, this);
         };
     }
 
     @Override
     public boolean isAutoCommit() {
-        return queryExecutor.getCurrentState().getYdbTxSettings().isAutoCommit();
+        return ydbConnectionState.getYdbTxSettings().isAutoCommit();
     }
 
     @Override
@@ -105,7 +145,7 @@ public class YdbConnection implements Connection {
     }
 
     public YdbIsolationLevel getYdbTransactionIsolationLevel() {
-        return queryExecutor.getCurrentState().getYdbTxSettings().getIsolationLevel();
+        return ydbConnectionState.getYdbTxSettings().getIsolationLevel();
     }
 
     @Override
@@ -115,7 +155,10 @@ public class YdbConnection implements Connection {
 
     @Override
     public Mono<Void> rollbackTransaction() {
-        return queryExecutor.rollbackTransaction();
+        return ydbConnectionState
+                .rollbackTransaction()
+                .doOnSuccess(this::updateState)
+                .then();
     }
 
     @Override
@@ -125,7 +168,10 @@ public class YdbConnection implements Connection {
 
     @Override
     public Mono<Void> setAutoCommit(boolean autoCommit) {
-        return queryExecutor.setAutoCommit(autoCommit);
+        return ydbConnectionState
+                .setAutoCommit(autoCommit)
+                .doOnSuccess(this::updateState)
+                .then();
     }
 
     @Override
@@ -135,7 +181,7 @@ public class YdbConnection implements Connection {
 
     @Override
     public Mono<Void> setStatementTimeout(Duration timeout) {
-        return queryExecutor.setStatementTimeout(timeout);
+        return ydbConnectionState.setStatementTimeout(timeout);
     }
 
     @Override
@@ -145,19 +191,27 @@ public class YdbConnection implements Connection {
     }
 
     public Mono<Void> setYdbTransactionIsolationLevel(YdbIsolationLevel isolationLevel) {
-        return queryExecutor.updateState(ydbTxState -> ydbTxState.withIsolationLevel(isolationLevel));
+        return ydbConnectionState.setIsolationLevel(isolationLevel);
     }
 
     public boolean isReadOnly() {
-        return queryExecutor.getCurrentState().getYdbTxSettings().isReadOnly();
+        return ydbConnectionState.getYdbTxSettings().isReadOnly();
     }
 
     public Mono<Void> setReadOnly(boolean readOnly) {
-        return queryExecutor.updateState(ydbTxState -> ydbTxState.withReadOnly(readOnly));
+        return ydbConnectionState.setReadOnly(readOnly);
+    }
+
+    public YdbConnectionState getCurrentState() {
+        return ydbConnectionState;
     }
 
     @Override
     public Mono<Boolean> validate(ValidationDepth depth) {
         return Mono.just(true);
+    }
+
+    private void updateState(YdbConnectionState ydbConnectionState) {
+        this.ydbConnectionState = ydbConnectionState;
     }
 }

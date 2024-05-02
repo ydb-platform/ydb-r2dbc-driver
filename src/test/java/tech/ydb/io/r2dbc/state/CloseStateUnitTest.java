@@ -1,73 +1,107 @@
 package tech.ydb.io.r2dbc.state;
 
+import java.time.Duration;
+import java.util.List;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import reactor.test.StepVerifier;
+import tech.ydb.io.r2dbc.YdbIsolationLevel;
 import tech.ydb.io.r2dbc.YdbTxSettings;
-import tech.ydb.table.Session;
+import tech.ydb.table.query.Params;
 
 /**
  * @author Egor Kuleshov
  */
 public class CloseStateUnitTest {
+    private static final String TEST_QUERY = "testQuery";
+    private static final YdbConnectionState state = CloseState.INSTANCE;
     @Test
-    public void getSessionTest() {
-        YdbConnectionState state = CloseState.INSTANCE;
-
-        state.getSession()
+    public void executeDataQueryTest() {
+        state.executeDataQuery(TEST_QUERY, Params.empty(), List.of())
                 .as(StepVerifier::create)
                 .verifyError(IllegalStateException.class);
     }
 
     @Test
-    public void withDataQueryTest() {
-        YdbTxSettings currentYdbTxSettings = Mockito.mock(YdbTxSettings.class);
-
-        YdbConnectionState state = CloseState.INSTANCE;
-
-        Session session = Mockito.mock(Session.class);
-
-        Assertions.assertThrows(IllegalStateException.class, () -> state
-                .withBeginTransaction("test_tx_id", session, currentYdbTxSettings));
+    public void executeSchemaQueryTest() {
+        state.executeSchemaQuery(TEST_QUERY)
+                .as(StepVerifier::create)
+                .verifyError(IllegalStateException.class);
     }
 
     @Test
-    public void withBeginTransactionTest() {
-        YdbTxSettings currentYdbTxSettings = Mockito.mock(YdbTxSettings.class);
+    public void beginTransactionTest() {
+        YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
 
-        YdbConnectionState state = CloseState.INSTANCE;
-
-        Session session = Mockito.mock(Session.class);
-
-        Assertions.assertThrows(IllegalStateException.class, () -> state
-                .withBeginTransaction("test_tx_id", session, currentYdbTxSettings));
+        state.beginTransaction(ydbTxSettings)
+                .as(StepVerifier::create)
+                .verifyError(IllegalStateException.class);
     }
 
     @Test
-    public void withCommitTest() {
-        YdbConnectionState state = CloseState.INSTANCE;
-        Assertions.assertThrows(IllegalStateException.class, state::withCommitTransaction);
+    public void commitTransactionTest() {
+        state.commitTransaction()
+                .as(StepVerifier::create)
+                .verifyError(IllegalStateException.class);
     }
 
     @Test
-    public void withRollbackTest() {
-        YdbConnectionState state = CloseState.INSTANCE;
-
-        Assertions.assertThrows(IllegalStateException.class, state::withRollbackTransaction);
+    public void rollbackTransactionTest() {
+        state.rollbackTransaction()
+                .as(StepVerifier::create)
+                .verifyError(IllegalStateException.class);
     }
 
     @Test
-    public void withAutoCommitTrue() {
-        YdbConnectionState state = CloseState.INSTANCE;
-
-        Assertions.assertThrows(IllegalStateException.class, () -> state.withAutoCommit(true));
+    public void setAutoCommitTrueTest() {
+        state.setAutoCommit(true)
+                .as(StepVerifier::create)
+                .verifyError(IllegalStateException.class);
     }
 
     @Test
-    public void withAutoCommitFalse() {
-        YdbConnectionState state = CloseState.INSTANCE;
+    public void setAutoCommitFalseTest() {
+        state.setAutoCommit(false)
+                .as(StepVerifier::create)
+                .verifyError(IllegalStateException.class);
+    }
 
-        Assertions.assertThrows(IllegalStateException.class, () -> state.withAutoCommit(false));
+    @Test
+    public void setIsolationLevelTest() {
+        YdbIsolationLevel isolationLevel = Mockito.mock(YdbIsolationLevel.class);
+
+        state.setIsolationLevel(isolationLevel)
+                .as(StepVerifier::create)
+                .verifyError(IllegalStateException.class);
+    }
+
+    @Test
+    public void setReadOnlyTest() {
+        state.setReadOnly(true)
+                .as(StepVerifier::create)
+                .verifyError(IllegalStateException.class);
+    }
+
+    @Test
+    public void setStatementTimeoutTest() {
+        Duration timeout = Mockito.mock(Duration.class);
+
+        state.setStatementTimeout(timeout)
+                .as(StepVerifier::create)
+                .verifyError(IllegalStateException.class);
+    }
+
+    @Test
+    public void getYdbTxSettings() {
+        Assertions.assertThrows(IllegalStateException.class, state::getYdbTxSettings);
+    }
+
+    @Test
+    public void closeTest() {
+        state.close()
+                .as(StepVerifier::create)
+                .verifyError(IllegalStateException.class);
     }
 }

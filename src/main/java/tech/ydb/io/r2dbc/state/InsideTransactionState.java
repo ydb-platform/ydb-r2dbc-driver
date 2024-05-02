@@ -16,122 +16,139 @@
 
 package tech.ydb.io.r2dbc.state;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.YdbContext;
 import tech.ydb.io.r2dbc.YdbIsolationLevel;
 import tech.ydb.io.r2dbc.YdbTxSettings;
+import tech.ydb.io.r2dbc.query.OperationType;
+import tech.ydb.io.r2dbc.result.YdbResult;
+import tech.ydb.io.r2dbc.util.ResultExtractor;
 import tech.ydb.table.Session;
+import tech.ydb.table.query.Params;
+import tech.ydb.table.settings.CommitTxSettings;
+import tech.ydb.table.settings.ExecuteDataQuerySettings;
+import tech.ydb.table.settings.RollbackTxSettings;
 import tech.ydb.table.transaction.TxControl;
 
 /**
+ * Implementation of the connection state in an open transaction.
+ *
  * @author Egor Kuleshov
  */
-public final class InsideTransactionState implements YdbConnectionState {
+public final class InsideTransactionState extends AbstractConnectionState implements YdbConnectionState {
+    private static final String SCHEME_QUERY_INSIDE_TRANSACTION = "Scheme query cannot be executed inside active "
+            + "transaction. This behavior may be changed by property schemeQueryTxMode";
+
     private final String id;
     private final Session session;
-    private final YdbTxSettings ydbTxSettings;
     private final TxControl.TxId txControl;
-    private final YdbContext context;
 
-    public InsideTransactionState(YdbContext context, String id, Session session, YdbTxSettings ydbTxSettings) {
-        this.context = context;
+    public InsideTransactionState(YdbContext ydbContext, String id, Session session, YdbTxSettings ydbTxSettings) {
+        super(ydbContext, ydbTxSettings, ydbContext.getDefaultTimeout());
         this.id = id;
         this.session = session;
         this.ydbTxSettings = ydbTxSettings;
         this.txControl = TxControl.id(id).setCommitTx(false);
     }
 
-    @Override
-    public Mono<Session> getSession() {
-        return Mono.just(session);
+    public InsideTransactionState(YdbContext ydbContext,
+                                  String id,
+                                  Session session,
+                                  YdbTxSettings ydbTxSettings,
+                                  Duration statementTimeout) {
+        super(ydbContext, ydbTxSettings, statementTimeout);
+        this.id = id;
+        this.session = session;
+        this.txControl = TxControl.id(id).setCommitTx(false);
     }
 
     @Override
-    public TxControl<?> txControl() {
-        return txControl;
+    public Mono<NextStateResult<Flux<YdbResult>>> executeDataQuery(String yql,
+                                                                   Params params,
+                                                                   List<OperationType> operationTypes) {
+        return Mono.fromFuture(session.executeDataQuery(yql, txControl, params,
+                        withStatementTimeout(new ExecuteDataQuerySettings())))
+                .map(dataQueryResult -> {
+                    String txId = dataQueryResult.getValue().getTxId();
+                    YdbConnectionState nextState = this;
+                    if (txId != null && !txId.isEmpty() && !txId.equals(this.id)) {
+                        nextState = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
+                    }
+                    if (dataQueryResult.getValue().getTxId() == null || dataQueryResult.getValue().getTxId().isEmpty()) {
+                        nextState = new OutsideTransactionState(ydbContext, ydbTxSettings, statementTimeout);
+                        session.close();
+                    }
+
+                    return new NextStateResult<>(ResultExtractor.extract(dataQueryResult, operationTypes), nextState);
+                });
     }
 
     @Override
-    public boolean isInTransaction() {
-        return true;
+    public Flux<YdbResult> executeSchemaQuery(String yql) {
+        return Flux.error(new IllegalStateException(SCHEME_QUERY_INSIDE_TRANSACTION));
     }
 
     @Override
-    public YdbTxSettings getYdbTxSettings() {
-        return ydbTxSettings;
+    public Mono<InsideTransactionState> beginTransaction(YdbTxSettings ydbTxSettings) {
+        return Mono.just(this);
     }
 
     @Override
-    public YdbConnectionState withDataQuery(String txId, Session session) {
-        if (id.equals(txId)) {
-            return this;
-        }
-
-        return new OutsideTransactionState(context, ydbTxSettings);
+    public Mono<OutsideTransactionState> commitTransaction() {
+        return Mono.fromFuture(session.commitTransaction(
+                        id,
+                        withStatementTimeout(new CommitTxSettings())))
+                .flatMap(ResultExtractor::extract)
+                .doOnSuccess(unused -> session.close())
+                .then(Mono.just(new OutsideTransactionState(ydbContext, ydbTxSettings, statementTimeout)));
     }
 
     @Override
-    public YdbConnectionState withBeginTransaction(String id, Session session, YdbTxSettings ydbTxSettings) {
-        return this;
+    public Mono<OutsideTransactionState> rollbackTransaction() {
+        return Mono.fromFuture(session.rollbackTransaction(
+                        id,
+                        withStatementTimeout(new RollbackTxSettings())))
+                .flatMap(ResultExtractor::extract)
+                .doOnSuccess(unused -> session.close())
+                .then(Mono.just(new OutsideTransactionState(ydbContext, ydbTxSettings, statementTimeout)));
     }
 
     @Override
-    public YdbConnectionState withCommitTransaction() {
-        session.close();
-        return new OutsideTransactionState(context, ydbTxSettings);
-    }
-
-    @Override
-    public YdbConnectionState withRollbackTransaction() {
-        session.close();
-        return new OutsideTransactionState(context, ydbTxSettings);
-    }
-
-    @Override
-    public YdbConnectionState withAutoCommit(boolean autoCommit) {
+    public Mono<YdbConnectionState> setAutoCommit(boolean autoCommit) {
         if (autoCommit) {
-            return new OutsideTransactionState(context, ydbTxSettings.withAutoCommit(true));
+            return commitTransaction()
+                    .flatMap(state -> state.setAutoCommit(true));
         }
 
-        return this;
+        return Mono.just(this);
     }
 
     @Override
-    public YdbConnectionState withIsolationLevel(YdbIsolationLevel isolationLevel) {
+    public Mono<Void> setIsolationLevel(YdbIsolationLevel isolationLevel) {
         if (ydbTxSettings.getIsolationLevel().equals(isolationLevel)) {
-            return this;
+            return Mono.empty();
         }
 
-        throw new IllegalStateException("Can not change isolation level in active transaction");
+        return Mono.error(new IllegalStateException("Can not change isolation level in active transaction"));
     }
 
     @Override
-    public YdbConnectionState withReadOnly(boolean readOnly) {
+    public Mono<Void> setReadOnly(boolean readOnly) {
         if (ydbTxSettings.isReadOnly() == readOnly) {
-            return this;
+            return Mono.empty();
         }
 
-        throw new IllegalStateException("Can not change read only in active transaction");
+        return Mono.error(new IllegalStateException("Can not change read only in active transaction"));
     }
 
-    @Override
-    public void withError(Session session) {
-    }
-
-    @Override
-    public YdbConnectionState close() {
-        return CloseState.INSTANCE;
-    }
-
-    @Override
-    public boolean isClosed() {
-        return false;
-    }
-
-    public String getId() {
-        return id;
+    public Mono<Void> close() {
+        return commitTransaction()
+                .then();
     }
 
     @Override
@@ -149,5 +166,15 @@ public final class InsideTransactionState implements YdbConnectionState {
     @Override
     public int hashCode() {
         return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return "InsideTransactionState{" +
+                "id='" + id + '\'' +
+                ", session=" + session +
+                ", txControl=" + txControl +
+                ", ydbTxSettings=" + ydbTxSettings +
+                '}';
     }
 }

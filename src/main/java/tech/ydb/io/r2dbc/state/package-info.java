@@ -14,22 +14,10 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc;
-
-import reactor.core.CoreSubscriber;
-import reactor.core.publisher.Mono;
-import reactor.core.publisher.MonoOperator;
-
 /**
  * @author Egor Kuleshov
  */
-public class MonoDiscardOnCancel<T> extends MonoOperator<T, T> {
-    MonoDiscardOnCancel(Mono<? extends T> source) {
-        super(source);
-    }
+@NonNullApi
+package tech.ydb.io.r2dbc.state;
 
-    @Override
-    public void subscribe(CoreSubscriber<? super T> actual) {
-        this.source.subscribe(new DiscardOnCancelSubscriber<>(actual));
-    }
-}
+import reactor.util.annotation.NonNullApi;

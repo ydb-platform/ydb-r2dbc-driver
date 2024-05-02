@@ -46,4 +46,8 @@ public class Bindings implements Iterable<Binding> {
     public Iterator<Binding> iterator() {
         return bindings.iterator();
     }
+
+    public boolean isEmpty() {
+        return bindings.isEmpty();
+    }
 }

@@ -16,10 +16,17 @@
 
 package tech.ydb.io.r2dbc.util;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.ydb.core.Result;
 import tech.ydb.core.Status;
 import tech.ydb.core.UnexpectedResultException;
+import tech.ydb.io.r2dbc.query.OperationType;
+import tech.ydb.io.r2dbc.result.YdbResult;
+import tech.ydb.table.query.DataQueryResult;
 
 /**
  * @author Kirill Kurdyukov
@@ -29,7 +36,7 @@ public class ResultExtractor {
     private ResultExtractor() {
     }
 
-    public static  <T> Mono<T> extract(Result<T> result, String failMessage) {
+    public static <T> Mono<T> extract(Result<T> result, String failMessage) {
         if (result.isSuccess()) {
             return Mono.just(result.getValue());
         }
@@ -37,11 +44,36 @@ public class ResultExtractor {
         return Mono.error(new UnexpectedResultException(failMessage, result.getStatus()));
     }
 
-    public static  <T> Mono<T> extract(Result<T> result) {
+    public static <T> Mono<T> extract(Result<T> result) {
         try {
             return Mono.just(result.getValue());
         } catch (UnexpectedResultException e) {
             return Mono.error(e);
+        }
+    }
+
+    public static Flux<YdbResult> extract(Result<DataQueryResult> dataQueryResultResult,
+                                          List<OperationType> operationTypes) {
+        try {
+            Mono<DataQueryResult> dataQueryResultMono =
+                    ResultExtractor.extract(dataQueryResultResult);
+
+            return dataQueryResultMono.flatMapMany(result -> {
+                List<YdbResult> results = new ArrayList<>();
+                for (int opIndex = 0, resSetIndex = 0; opIndex < operationTypes.size(); opIndex++) {
+                    results.add(switch (operationTypes.get(opIndex)) {
+                        case SELECT -> new YdbResult(result.getResultSet(resSetIndex++));
+                        case UPDATE -> YdbResult.UPDATE_RESULT;
+                        case SCHEME -> throw new IllegalStateException(
+                                "DDL operation not support in executeDataQuery"
+                        );
+                    });
+                }
+
+                return Flux.fromIterable(results);
+            });
+        } catch (UnexpectedResultException e) {
+            return Flux.error(e);
         }
     }
 

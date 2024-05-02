@@ -17,7 +17,10 @@
 package tech.ydb.io.r2dbc;
 
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 
+import tech.ydb.core.Result;
+import tech.ydb.table.Session;
 import tech.ydb.table.TableClient;
 /**
  * @author Egor Kuleshov
@@ -40,12 +43,8 @@ public class YdbContext {
         this(tableClient, Duration.ofSeconds(5), Duration.ofSeconds(2), YdbTxSettings.DEFAULT);
     }
 
-    public TableClient getTableClient() {
-        return tableClient;
-    }
-
-    public Duration getCreateSessionTimeout() {
-        return createSessionTimeout;
+    public CompletableFuture<Result<Session>> getSession() {
+        return tableClient.createSession(createSessionTimeout);
     }
 
     public Duration getDefaultTimeout() {
