@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc.executor;
+package tech.ydb.io.r2dbc;
 
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
-import tech.ydb.io.r2dbc.YdbConnection;
 import tech.ydb.io.r2dbc.state.CloseState;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
 import tech.ydb.table.query.Params;

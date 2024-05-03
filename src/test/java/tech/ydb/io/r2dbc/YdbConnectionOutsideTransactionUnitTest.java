@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc.executor;
+package tech.ydb.io.r2dbc;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -28,9 +28,6 @@ import tech.ydb.core.Result;
 import tech.ydb.core.Status;
 import tech.ydb.core.StatusCode;
 import tech.ydb.core.UnexpectedResultException;
-import tech.ydb.io.r2dbc.YdbConnection;
-import tech.ydb.io.r2dbc.YdbContext;
-import tech.ydb.io.r2dbc.YdbTxSettings;
 import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.io.r2dbc.state.OutsideTransactionState;

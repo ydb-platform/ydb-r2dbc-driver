@@ -16,6 +16,7 @@
 
 package tech.ydb.io.r2dbc;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.r2dbc.spi.Batch;
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionMetadata;
@@ -202,7 +203,8 @@ public class YdbConnection implements Connection {
         return ydbConnectionState.setReadOnly(readOnly);
     }
 
-    public YdbConnectionState getCurrentState() {
+    @VisibleForTesting
+    YdbConnectionState getCurrentState() {
         return ydbConnectionState;
     }
 
