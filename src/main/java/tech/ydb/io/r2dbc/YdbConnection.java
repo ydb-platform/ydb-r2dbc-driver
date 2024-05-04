@@ -63,8 +63,8 @@ public class YdbConnection implements Connection {
                 .flatMapMany(NextStateResult::getResult);
     }
 
-    public Flux<YdbResult> executeSchemaQuery(String yql) {
-        return ydbConnectionState.executeSchemaQuery(yql);
+    public Flux<YdbResult> executeSchemeQuery(String yql) {
+        return ydbConnectionState.executeSchemeQuery(yql);
     }
 
     @Override

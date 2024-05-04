@@ -47,6 +47,10 @@ public class YdbContext {
         return tableClient.createSession(createSessionTimeout);
     }
 
+    public Duration getCreateSessionTimeout() {
+        return createSessionTimeout;
+    }
+
     public Duration getDefaultTimeout() {
         return defaultTimeout;
     }

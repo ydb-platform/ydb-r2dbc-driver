@@ -60,7 +60,7 @@ public class YdbDDLStatement extends YdbStatement {
     @Override
     public Flux<YdbResult> execute() {
         try {
-            return connection.executeSchemaQuery(query.getYqlQuery(Binding.empty()));
+            return connection.executeSchemeQuery(query.getYqlQuery(Binding.empty()));
         } catch (Exception e) {
             return Flux.error(e);
         }

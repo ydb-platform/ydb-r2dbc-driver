@@ -56,7 +56,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
     private final YdbContext ydbContext = new YdbContext(client);
 
     @Test
-    public void executeSchemaQueryTest() {
+    public void executeSchemeQueryTest() {
         Session session = mock(Session.class);
         when(session.executeSchemeQuery(any(), any())).thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
         when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
@@ -64,7 +64,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
         YdbConnection queryExecutor = new YdbConnection(state);
 
-        queryExecutor.executeSchemaQuery("test")
+        queryExecutor.executeSchemeQuery("test")
                 .flatMap(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
                 .expectNext(0L)
@@ -75,7 +75,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
     }
 
     @Test
-    public void executeSchemaQueryCancelTest() {
+    public void executeSchemeQueryCancelTest() {
         Session session = mock(Session.class);
         when(session.executeSchemeQuery(any(), any())).thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
         when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
@@ -83,7 +83,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
         YdbConnection queryExecutor = new YdbConnection(state);
 
-        queryExecutor.executeSchemaQuery("test")
+        queryExecutor.executeSchemeQuery("test")
                 .flatMap(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
                 .thenCancel()
@@ -404,13 +404,13 @@ public class YdbConnectionOutsideTransactionUnitTest {
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
         YdbConnection queryExecutor = new YdbConnection(state);
 
-        queryExecutor.executeSchemaQuery("test")
+        queryExecutor.executeSchemeQuery("test")
                 .as(StepVerifier::create)
                 .verifyError(UnexpectedResultException.class);
     }
 
     @Test
-    public void executeSchemaQueryFailTest() {
+    public void executeSchemeQueryFailTest() {
         Session session = mock(Session.class);
         when(session.executeSchemeQuery(any(), any())).thenReturn(CompletableFuture.completedFuture(Status.of(StatusCode.BAD_REQUEST)));
         when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
@@ -418,7 +418,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
         YdbConnection queryExecutor = new YdbConnection(state);
 
-        queryExecutor.executeSchemaQuery("test")
+        queryExecutor.executeSchemeQuery("test")
                 .map(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
                 .verifyError(UnexpectedResultException.class);
@@ -426,7 +426,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
     }
 
     @Test
-    public void executeSchemaQueryErrorTest() {
+    public void executeSchemeQueryErrorTest() {
         Session session = mock(Session.class);
         when(session.executeSchemeQuery(any(), any())).thenThrow(new RuntimeException());
         when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
@@ -434,7 +434,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
         YdbConnection queryExecutor = new YdbConnection(state);
 
-        queryExecutor.executeSchemaQuery("test")
+        queryExecutor.executeSchemeQuery("test")
                 .as(StepVerifier::create)
                 .verifyError(RuntimeException.class);
         Mockito.verify(session).close();

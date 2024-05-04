@@ -49,7 +49,7 @@ public interface YdbConnectionState {
      * @param yql built a query without parameters
      * @return the result of the yql schema query
      */
-    Flux<YdbResult> executeSchemaQuery(String yql);
+    Flux<YdbResult> executeSchemeQuery(String yql);
 
     /**
      * Begin a transaction with the settings if the transaction has not been started yet, otherwise it does nothing.

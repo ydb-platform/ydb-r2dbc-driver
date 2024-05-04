@@ -30,11 +30,11 @@ import tech.ydb.table.query.Params;
 public class YdbConnectionCloseStateTest {
 
     @Test
-    public void executeSchemaQueryTest() {
+    public void executeSchemeQueryTest() {
         YdbConnectionState state = CloseState.INSTANCE;
         YdbConnection queryExecutor = new YdbConnection(state);
 
-        queryExecutor.executeSchemaQuery("test")
+        queryExecutor.executeSchemeQuery("test")
                 .as(StepVerifier::create)
                 .verifyError(IllegalStateException.class);
     }

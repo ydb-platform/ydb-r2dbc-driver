@@ -79,7 +79,7 @@ public class OutsideTransactionState extends AbstractConnectionState implements 
     }
 
     @Override
-    public Flux<YdbResult> executeSchemaQuery(String yql) {
+    public Flux<YdbResult> executeSchemeQuery(String yql) {
         return fluxWithSession(session -> Mono.fromFuture(session.executeSchemeQuery(yql,
                         withStatementTimeout(new ExecuteSchemeQuerySettings())))
                 .flatMap(ResultExtractor::extract)

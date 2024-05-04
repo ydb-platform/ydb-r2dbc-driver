@@ -25,8 +25,8 @@ public class CloseStateUnitTest {
     }
 
     @Test
-    public void executeSchemaQueryTest() {
-        state.executeSchemaQuery(TEST_QUERY)
+    public void executeSchemeQueryTest() {
+        state.executeSchemeQuery(TEST_QUERY)
                 .as(StepVerifier::create)
                 .verifyError(IllegalStateException.class);
     }

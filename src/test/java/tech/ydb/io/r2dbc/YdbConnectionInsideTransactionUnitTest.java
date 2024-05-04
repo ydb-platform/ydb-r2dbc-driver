@@ -55,14 +55,14 @@ public class YdbConnectionInsideTransactionUnitTest {
             new YdbTxSettings(YdbIsolationLevel.SERIALIZABLE, false, false);
 
     @Test
-    public void executeSchemaQueryTest() {
+    public void executeSchemeQueryTest() {
         Session session = mock(Session.class);
         when(session.executeSchemeQuery(any(), any())).thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
 
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
         YdbConnection queryExecutor = new YdbConnection(state);
 
-        queryExecutor.executeSchemaQuery("test")
+        queryExecutor.executeSchemeQuery("test")
                 .flatMap(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
                 .verifyError(IllegalStateException.class);
