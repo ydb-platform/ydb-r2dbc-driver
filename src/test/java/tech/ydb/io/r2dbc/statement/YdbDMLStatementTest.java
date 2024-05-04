@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.ydb.io.r2dbc.query.QueryType;
 import tech.ydb.io.r2dbc.query.YdbQuery;
-import tech.ydb.io.r2dbc.QueryExecutor;
+import tech.ydb.io.r2dbc.YdbConnection;
 import tech.ydb.io.r2dbc.type.YdbType;
 import tech.ydb.table.values.PrimitiveType;
 import tech.ydb.table.values.PrimitiveValue;
@@ -23,7 +23,7 @@ public class YdbDMLStatementTest {
     @Test
     public void bindNamedTest() {
         YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
-        QueryExecutor queryExecutor = mock(QueryExecutor.class);
+        YdbConnection queryExecutor = mock(YdbConnection.class);
         YdbStatement statement = new YdbDMLStatement(query, queryExecutor);
 
         statement.bind("$testParamA", 1);
@@ -37,7 +37,7 @@ public class YdbDMLStatementTest {
     @Test
     public void bindParameterTest() {
         YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
-        QueryExecutor queryExecutor = mock(QueryExecutor.class);
+        YdbConnection queryExecutor = mock(YdbConnection.class);
         YdbStatement statement = new YdbDMLStatement(query, queryExecutor);
 
         statement.bind("$testParamA", Parameters.in(R2dbcType.BIGINT, 1L));
@@ -51,7 +51,7 @@ public class YdbDMLStatementTest {
     @Test
     public void bindYdbParameterTest() {
         YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
-        QueryExecutor queryExecutor = mock(QueryExecutor.class);
+        YdbConnection queryExecutor = mock(YdbConnection.class);
         YdbStatement statement = new YdbDMLStatement(query, queryExecutor);
 
         statement.bind("$testParamA", Parameters.in(YdbType.INT32, 1));
@@ -65,7 +65,7 @@ public class YdbDMLStatementTest {
     @Test
     public void bindClassParameterTest() {
         YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
-        QueryExecutor queryExecutor = mock(QueryExecutor.class);
+        YdbConnection queryExecutor = mock(YdbConnection.class);
         YdbStatement statement = new YdbDMLStatement(query, queryExecutor);
 
         statement.bind("$testParamA", Parameters.in(1));
@@ -79,7 +79,7 @@ public class YdbDMLStatementTest {
     @Test
     public void bindIndexedTest() {
         YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
-        QueryExecutor queryExecutor = mock(QueryExecutor.class);
+        YdbConnection queryExecutor = mock(YdbConnection.class);
         YdbStatement statement = new YdbDMLStatement(query, queryExecutor);
 
         statement.bind(0, 1);
@@ -93,7 +93,7 @@ public class YdbDMLStatementTest {
     @Test
     public void bindNullTest() {
         YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
-        QueryExecutor queryExecutor = mock(QueryExecutor.class);
+        YdbConnection queryExecutor = mock(YdbConnection.class);
         YdbStatement statement = new YdbDMLStatement(query, queryExecutor);
 
         statement.bindNull(0, int.class);
@@ -107,7 +107,7 @@ public class YdbDMLStatementTest {
     @Test
     public void bindNullParameterTest() {
         YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
-        QueryExecutor queryExecutor = mock(QueryExecutor.class);
+        YdbConnection queryExecutor = mock(YdbConnection.class);
         YdbStatement statement = new YdbDMLStatement(query, queryExecutor);
 
         statement.bind("$testParamA", Parameters.in(R2dbcType.BIGINT));
@@ -121,7 +121,7 @@ public class YdbDMLStatementTest {
     @Test
     public void bindNullYdbParameterTest() {
         YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
-        QueryExecutor queryExecutor = mock(QueryExecutor.class);
+        YdbConnection queryExecutor = mock(YdbConnection.class);
         YdbStatement statement = new YdbDMLStatement(query, queryExecutor);
 
         statement.bind("$testParamA", Parameters.in(YdbType.INT32));
@@ -135,7 +135,7 @@ public class YdbDMLStatementTest {
     @Test
     public void bindNullClassParameterTest() {
         YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA"), QueryType.DML);
-        QueryExecutor queryExecutor = mock(QueryExecutor.class);
+        YdbConnection queryExecutor = mock(YdbConnection.class);
         YdbStatement statement = new YdbDMLStatement(query, queryExecutor);
 
         statement.bind("$testParamA", Parameters.in(String.class));
@@ -147,7 +147,7 @@ public class YdbDMLStatementTest {
     @Test
     public void addBeforeFullBoundedTest() {
         YdbQuery query = new YdbQuery("test_sql", List.of("$testParam"), QueryType.DML);
-        QueryExecutor queryExecutor = mock(QueryExecutor.class);
+        YdbConnection queryExecutor = mock(YdbConnection.class);
         YdbStatement statement = new YdbDMLStatement(query, queryExecutor);
 
         Assertions.assertThrows(IllegalArgumentException.class, statement::add);
@@ -156,7 +156,7 @@ public class YdbDMLStatementTest {
     @Test
     public void executeBeforeFullBoundedTest() {
         YdbQuery query = new YdbQuery("test_sql", List.of("$testParamA", "$testParamB"), QueryType.DML);
-        QueryExecutor queryExecutor = mock(QueryExecutor.class);
+        YdbConnection queryExecutor = mock(YdbConnection.class);
         YdbStatement statement = new YdbDMLStatement(query, queryExecutor);
         statement.bind("$testParamA", "test");
 
@@ -166,7 +166,7 @@ public class YdbDMLStatementTest {
     @Test
     public void bindNonExistTest() {
         YdbQuery query = new YdbQuery("test_sql", List.of("$testParam1", "$testParam2"), QueryType.DML);
-        QueryExecutor queryExecutor = mock(QueryExecutor.class);
+        YdbConnection queryExecutor = mock(YdbConnection.class);
         YdbStatement statement = new YdbDMLStatement(query, queryExecutor);
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> statement.bind("$testNonExistParam", 1));

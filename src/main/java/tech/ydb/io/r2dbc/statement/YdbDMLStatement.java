@@ -19,13 +19,13 @@ package tech.ydb.io.r2dbc.statement;
 import reactor.core.publisher.Flux;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 import tech.ydb.io.r2dbc.result.YdbResult;
-import tech.ydb.io.r2dbc.QueryExecutor;
+import tech.ydb.io.r2dbc.YdbConnection;
 
 /**
  * @author Egor Kuleshov
  */
 public class YdbDMLStatement extends YdbStatement {
-    public YdbDMLStatement(YdbQuery query, QueryExecutor queryExecutor) {
+    public YdbDMLStatement(YdbQuery query, YdbConnection queryExecutor) {
         super(query, queryExecutor);
     }
 
@@ -33,10 +33,13 @@ public class YdbDMLStatement extends YdbStatement {
     public Flux<YdbResult> execute() {
         bindings.getCurrent().validate();
 
+        String yql = query.getYqlQuery(bindings.getCurrent());
         return Flux.fromIterable(bindings)
-                .flatMap(binding -> queryExecutor.executeDataQuery(
-                        query.getYqlQuery(binding),
-                        binding.toParams(),
-                        query.getOperationTypes()));
+                .flatMap(binding -> connection.executeDataQuery(
+                                yql,
+                                binding.toParams(),
+                                query.getOperationTypes()
+                        )
+                );
     }
 }

@@ -14,34 +14,27 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc.executor;
+package tech.ydb.io.r2dbc;
 
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import reactor.test.StepVerifier;
-import tech.ydb.io.r2dbc.QueryExecutor;
-import tech.ydb.io.r2dbc.YdbContext;
 import tech.ydb.io.r2dbc.state.CloseState;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
-import tech.ydb.table.TableClient;
 import tech.ydb.table.query.Params;
-
-import static org.mockito.Mockito.mock;
 
 /**
  * @author Egor Kuleshov
  */
-public class QueryExecutorCloseStateTest {
-    private final TableClient client = mock(TableClient.class);
-    private final YdbContext ydbContext = new YdbContext(client);
+public class YdbConnectionCloseStateTest {
 
     @Test
-    public void executeSchemaQueryTest() {
+    public void executeSchemeQueryTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
+        YdbConnection queryExecutor = new YdbConnection(state);
 
-        queryExecutor.executeSchemaQuery("test")
+        queryExecutor.executeSchemeQuery("test")
                 .as(StepVerifier::create)
                 .verifyError(IllegalStateException.class);
     }
@@ -49,7 +42,7 @@ public class QueryExecutorCloseStateTest {
     @Test
     public void executeDataQueryTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
+        YdbConnection queryExecutor = new YdbConnection(state);
 
         queryExecutor.executeDataQuery("test", Params.empty(), List.of())
                 .as(StepVerifier::create)
@@ -59,7 +52,7 @@ public class QueryExecutorCloseStateTest {
     @Test
     public void beginTransactionTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
+        YdbConnection queryExecutor = new YdbConnection(state);
 
         queryExecutor.beginTransaction()
                 .as(StepVerifier::create)
@@ -69,7 +62,7 @@ public class QueryExecutorCloseStateTest {
     @Test
     public void commitTransactionTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
+        YdbConnection queryExecutor = new YdbConnection(state);
 
         queryExecutor.commitTransaction()
                 .as(StepVerifier::create)
@@ -79,7 +72,7 @@ public class QueryExecutorCloseStateTest {
     @Test
     public void rollbackTransactionTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
+        YdbConnection queryExecutor = new YdbConnection(state);
 
         queryExecutor.rollbackTransaction()
                 .as(StepVerifier::create)
@@ -89,7 +82,7 @@ public class QueryExecutorCloseStateTest {
     @Test
     public void setAutoCommitTrueTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
+        YdbConnection queryExecutor = new YdbConnection(state);
 
         queryExecutor.setAutoCommit(true)
                 .as(StepVerifier::create)
@@ -99,7 +92,7 @@ public class QueryExecutorCloseStateTest {
     @Test
     public void setAutoCommitFalseTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
+        YdbConnection queryExecutor = new YdbConnection(state);
 
         queryExecutor.setAutoCommit(false)
                 .as(StepVerifier::create)
@@ -109,7 +102,7 @@ public class QueryExecutorCloseStateTest {
     @Test
     public void closeTest() {
         YdbConnectionState state = CloseState.INSTANCE;
-        QueryExecutor queryExecutor = new QueryExecutor(ydbContext, state);
+        YdbConnection queryExecutor = new YdbConnection(state);
 
         queryExecutor.close()
                 .as(StepVerifier::create)

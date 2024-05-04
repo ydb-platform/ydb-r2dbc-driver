@@ -19,7 +19,7 @@ package tech.ydb.io.r2dbc.statement;
 import reactor.core.publisher.Flux;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 import tech.ydb.io.r2dbc.result.YdbResult;
-import tech.ydb.io.r2dbc.QueryExecutor;
+import tech.ydb.io.r2dbc.YdbConnection;
 import tech.ydb.io.r2dbc.statement.binding.Binding;
 
 /**
@@ -28,7 +28,7 @@ import tech.ydb.io.r2dbc.statement.binding.Binding;
 public class YdbDDLStatement extends YdbStatement {
     private static final String NOT_SUPPORTED_MESSAGE = "Operation not supported for YdbDDLStatement";
 
-    public YdbDDLStatement(YdbQuery query, QueryExecutor queryExecutor) {
+    public YdbDDLStatement(YdbQuery query, YdbConnection queryExecutor) {
         super(query, queryExecutor);
     }
 
@@ -60,7 +60,7 @@ public class YdbDDLStatement extends YdbStatement {
     @Override
     public Flux<YdbResult> execute() {
         try {
-            return queryExecutor.executeSchemaQuery(query.getYqlQuery(Binding.empty()));
+            return connection.executeSchemeQuery(query.getYqlQuery(Binding.empty()));
         } catch (Exception e) {
             return Flux.error(e);
         }

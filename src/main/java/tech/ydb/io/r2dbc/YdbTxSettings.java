@@ -29,7 +29,7 @@ public class YdbTxSettings {
     public static final YdbTxSettings DEFAULT = new YdbTxSettings(YdbIsolationLevel.SERIALIZABLE, false, true);
     private volatile YdbIsolationLevel isolationLevel;
     private volatile boolean readOnly;
-    private final boolean autoCommit;
+    private volatile boolean autoCommit;
 
     public YdbTxSettings(YdbIsolationLevel isolationLevel, boolean readOnly, boolean autoCommit) {
         Objects.requireNonNull(isolationLevel, "Expected isolation non null");
@@ -82,6 +82,10 @@ public class YdbTxSettings {
 
     public boolean isAutoCommit() {
         return autoCommit;
+    }
+
+    public void setAutoCommit(boolean autoCommit) {
+        this.autoCommit = autoCommit;
     }
 
     public YdbTxSettings withAutoCommit(boolean autoCommit) {
@@ -144,5 +148,14 @@ public class YdbTxSettings {
     @Override
     public int hashCode() {
         return Objects.hash(isolationLevel, readOnly, autoCommit);
+    }
+
+    @Override
+    public String toString() {
+        return "YdbTxSettings{" +
+                "isolationLevel=" + isolationLevel +
+                ", readOnly=" + readOnly +
+                ", autoCommit=" + autoCommit +
+                '}';
     }
 }

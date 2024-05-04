@@ -19,7 +19,7 @@ package tech.ydb.io.r2dbc.statement;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.ydb.io.r2dbc.query.YdbQuery;
-import tech.ydb.io.r2dbc.QueryExecutor;
+import tech.ydb.io.r2dbc.YdbConnection;
 
 import static org.mockito.Mockito.mock;
 
@@ -30,7 +30,7 @@ public class YdbDDLStatementTest {
     @Test
     public void testAdd() {
         YdbQuery query = mock(YdbQuery.class);
-        QueryExecutor queryExecutor = mock(QueryExecutor.class);
+        YdbConnection queryExecutor = mock(YdbConnection.class);
 
         YdbStatement statement = new YdbDDLStatement(query, queryExecutor);
 
@@ -41,7 +41,7 @@ public class YdbDDLStatementTest {
     @Test
     public void testBind() {
         YdbQuery query = mock(YdbQuery.class);
-        QueryExecutor queryExecutor = mock(QueryExecutor.class);
+        YdbConnection queryExecutor = mock(YdbConnection.class);
 
         YdbStatement statement = new YdbDDLStatement(query, queryExecutor);
 
@@ -54,7 +54,7 @@ public class YdbDDLStatementTest {
     @Test
     public void testBindNull() {
         YdbQuery query = mock(YdbQuery.class);
-        QueryExecutor queryExecutor = mock(QueryExecutor.class);
+        YdbConnection queryExecutor = mock(YdbConnection.class);
 
         YdbStatement statement = new YdbDDLStatement(query, queryExecutor);
 

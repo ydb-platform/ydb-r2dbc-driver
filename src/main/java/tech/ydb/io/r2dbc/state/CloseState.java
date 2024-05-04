@@ -16,13 +16,21 @@
 
 package tech.ydb.io.r2dbc.state;
 
+import java.time.Duration;
+import java.util.List;
+
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.YdbIsolationLevel;
 import tech.ydb.io.r2dbc.YdbTxSettings;
-import tech.ydb.table.Session;
-import tech.ydb.table.transaction.TxControl;
+import tech.ydb.io.r2dbc.query.OperationType;
+import tech.ydb.io.r2dbc.result.YdbResult;
+import tech.ydb.table.query.Params;
 
 /**
+ * Implementation state of the closed connection.
+ * Throw or return an {@link IllegalStateException} on the call of each method
+ *
  * @author Egor Kuleshov
  */
 public class CloseState implements YdbConnectionState {
@@ -33,18 +41,48 @@ public class CloseState implements YdbConnectionState {
     }
 
     @Override
-    public Mono<Session> getSession() {
+    public Mono<NextStateResult<Flux<YdbResult>>> executeDataQuery(String yql, Params params, List<OperationType> operationTypes) {
         return Mono.error(new IllegalStateException(CLOSED_STATE_MESSAGE));
     }
 
     @Override
-    public TxControl<?> txControl() {
-        throw new IllegalStateException(CLOSED_STATE_MESSAGE);
+    public Flux<YdbResult> executeSchemeQuery(String yql) {
+        return Flux.error(new IllegalStateException(CLOSED_STATE_MESSAGE));
     }
 
     @Override
-    public boolean isInTransaction() {
-        throw new IllegalStateException(CLOSED_STATE_MESSAGE);
+    public Mono<InsideTransactionState> beginTransaction(YdbTxSettings ydbTxSettings) {
+        return Mono.error(new IllegalStateException(CLOSED_STATE_MESSAGE));
+    }
+
+    @Override
+    public Mono<OutsideTransactionState> commitTransaction() {
+        return Mono.error(new IllegalStateException(CLOSED_STATE_MESSAGE));
+    }
+
+    @Override
+    public Mono<OutsideTransactionState> rollbackTransaction() {
+        return Mono.error(new IllegalStateException(CLOSED_STATE_MESSAGE));
+    }
+
+    @Override
+    public Mono<YdbConnectionState> setAutoCommit(boolean autoCommit) {
+        return Mono.error(new IllegalStateException(CLOSED_STATE_MESSAGE));
+    }
+
+    @Override
+    public Mono<Void> setIsolationLevel(YdbIsolationLevel isolationLevel) {
+        return Mono.error(new IllegalStateException(CLOSED_STATE_MESSAGE));
+    }
+
+    @Override
+    public Mono<Void> setReadOnly(boolean readOnly) {
+        return Mono.error(new IllegalStateException(CLOSED_STATE_MESSAGE));
+    }
+
+    @Override
+    public Mono<Void> setStatementTimeout(Duration timeout) {
+        return Mono.error(new IllegalStateException(CLOSED_STATE_MESSAGE));
     }
 
     @Override
@@ -53,52 +91,7 @@ public class CloseState implements YdbConnectionState {
     }
 
     @Override
-    public YdbConnectionState withDataQuery(String txId, Session session) {
-        throw new IllegalStateException(CLOSED_STATE_MESSAGE);
-    }
-
-    @Override
-    public YdbConnectionState withBeginTransaction(String id, Session session, YdbTxSettings ydbTxSettings) {
-        throw new IllegalStateException(CLOSED_STATE_MESSAGE);
-    }
-
-    @Override
-    public YdbConnectionState withCommitTransaction() {
-        throw new IllegalStateException(CLOSED_STATE_MESSAGE);
-    }
-
-    @Override
-    public YdbConnectionState withRollbackTransaction() {
-        throw new IllegalStateException(CLOSED_STATE_MESSAGE);
-    }
-
-    @Override
-    public YdbConnectionState withAutoCommit(boolean autoCommit) {
-        throw new IllegalStateException(CLOSED_STATE_MESSAGE);
-    }
-
-    @Override
-    public YdbConnectionState withIsolationLevel(YdbIsolationLevel isolationLevel) {
-        throw new IllegalStateException(CLOSED_STATE_MESSAGE);
-    }
-
-    @Override
-    public YdbConnectionState withReadOnly(boolean readOnly) {
-        throw new IllegalStateException(CLOSED_STATE_MESSAGE);
-    }
-
-    @Override
-    public void withError(Session session) {
-        throw new IllegalStateException(CLOSED_STATE_MESSAGE);
-    }
-
-    @Override
-    public YdbConnectionState close() {
-        throw new IllegalStateException(CLOSED_STATE_MESSAGE);
-    }
-
-    @Override
-    public boolean isClosed() {
-        return true;
+    public Mono<Void> close() {
+        return Mono.error(new IllegalStateException(CLOSED_STATE_MESSAGE));
     }
 }

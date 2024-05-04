@@ -14,24 +14,27 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc;
-
-import reactor.core.CoreSubscriber;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxOperator;
+package tech.ydb.io.r2dbc.state;
 
 /**
- * Drains the flux if the subscriber cancels the subscription
+ * Class is a wrapper over the result of the operation and the next connection state.
  *
  * @author Egor Kuleshov
  */
-public class FluxDiscardOnCancel<T> extends FluxOperator<T, T> {
-    public FluxDiscardOnCancel(Flux<? extends T> source) {
-        super(source);
+public class NextStateResult<T> {
+    private final T result;
+    private final YdbConnectionState nextState;
+
+    NextStateResult(T result, YdbConnectionState nextState) {
+        this.result = result;
+        this.nextState = nextState;
     }
 
-    @Override
-    public void subscribe(CoreSubscriber<? super T> actual) {
-        this.source.subscribe(new DiscardOnCancelSubscriber<>(actual));
+    public T getResult() {
+        return result;
+    }
+
+    public YdbConnectionState getNextState() {
+        return nextState;
     }
 }
