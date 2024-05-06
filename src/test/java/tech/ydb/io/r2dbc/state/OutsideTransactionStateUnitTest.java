@@ -19,6 +19,7 @@ package tech.ydb.io.r2dbc.state;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import reactor.test.StepVerifier;
@@ -27,7 +28,7 @@ import tech.ydb.core.Status;
 import tech.ydb.core.StatusCode;
 import tech.ydb.core.UnexpectedResultException;
 import tech.ydb.io.r2dbc.YdbContext;
-import tech.ydb.io.r2dbc.YdbTxSettings;
+import tech.ydb.io.r2dbc.settings.YdbTxSettings;
 import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.proto.ValueProtos;
@@ -325,7 +326,7 @@ public class OutsideTransactionStateUnitTest {
     public void setAutoCommitTrueTest() {
         TableClient tableClient = Mockito.mock(TableClient.class);
         YdbContext ydbContext = new YdbContext(tableClient);
-        YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
+        YdbTxSettings ydbTxSettings = YdbTxSettings.defaultSettings();
 
         OutsideTransactionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
 
@@ -334,7 +335,8 @@ public class OutsideTransactionStateUnitTest {
                 .expectNext(state)
                 .verifyComplete();
 
-        Mockito.verify(ydbTxSettings).setAutoCommit(true);
+        Assertions.assertEquals(ydbTxSettings, state.getYdbTxSettings());
+        Assertions.assertTrue(ydbTxSettings.isAutoCommit());
     }
 
     @Test

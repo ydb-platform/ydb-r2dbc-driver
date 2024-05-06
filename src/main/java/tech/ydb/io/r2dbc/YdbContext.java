@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
 import tech.ydb.core.Result;
+import tech.ydb.io.r2dbc.settings.YdbTxSettings;
 import tech.ydb.table.Session;
 import tech.ydb.table.TableClient;
 /**
@@ -40,7 +41,7 @@ public class YdbContext {
     }
 
     public YdbContext(TableClient tableClient) {
-        this(tableClient, Duration.ofSeconds(5), Duration.ofSeconds(2), YdbTxSettings.DEFAULT);
+        this(tableClient, Duration.ofSeconds(5), Duration.ofSeconds(2), YdbTxSettings.defaultSettings());
     }
 
     public CompletableFuture<Result<Session>> getSession() {

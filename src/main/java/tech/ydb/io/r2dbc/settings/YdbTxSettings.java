@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc;
+package tech.ydb.io.r2dbc.settings;
 
 import java.util.Objects;
 
+import com.google.common.annotations.VisibleForTesting;
+import io.r2dbc.spi.IsolationLevel;
 import io.r2dbc.spi.TransactionDefinition;
+import tech.ydb.io.r2dbc.YdbTransactionDefinition;
 import tech.ydb.table.transaction.Transaction;
 import tech.ydb.table.transaction.TxControl;
 
@@ -26,12 +29,20 @@ import tech.ydb.table.transaction.TxControl;
  * @author Egor Kuleshov
  */
 public class YdbTxSettings {
-    public static final YdbTxSettings DEFAULT = new YdbTxSettings(YdbIsolationLevel.SERIALIZABLE, false, true);
-    private volatile YdbIsolationLevel isolationLevel;
+    private volatile YdbIsolationLevelEnum isolationLevel;
     private volatile boolean readOnly;
     private volatile boolean autoCommit;
 
-    public YdbTxSettings(YdbIsolationLevel isolationLevel, boolean readOnly, boolean autoCommit) {
+    public static YdbTxSettings defaultSettings() {
+        return new YdbTxSettings(YdbIsolationLevelEnum.SERIALIZABLE, false, true);
+    }
+
+    @VisibleForTesting
+    YdbTxSettings(IsolationLevel isolationLevel, boolean readOnly, boolean autoCommit) {
+        this(YdbIsolationLevelEnum.valueOf(isolationLevel), readOnly, autoCommit);
+    }
+
+    private YdbTxSettings(YdbIsolationLevelEnum isolationLevel, boolean readOnly, boolean autoCommit) {
         Objects.requireNonNull(isolationLevel, "Expected isolation non null");
         validate(isolationLevel, readOnly);
         this.isolationLevel = isolationLevel;
@@ -40,13 +51,13 @@ public class YdbTxSettings {
     }
 
     public YdbTxSettings(TransactionDefinition transactionDefinition) {
-        YdbIsolationLevel ydbIsolationLevelOption =
-                transactionDefinition.getAttribute(YdbTransactionDefinition.YDB_ISOLATION_LEVEL);
+        IsolationLevel ydbIsolationLevelOption =
+                transactionDefinition.getAttribute(YdbTransactionDefinition.ISOLATION_LEVEL);
         if (ydbIsolationLevelOption == null) {
             throw new IllegalArgumentException("Expected ydbIsolation level in transaction definition, but not found");
         }
 
-        this.isolationLevel = transactionDefinition.getAttribute(YdbTransactionDefinition.YDB_ISOLATION_LEVEL);
+        this.isolationLevel = YdbIsolationLevelEnum.valueOf(ydbIsolationLevelOption);
         this.readOnly = isolationLevel.isReadOnly();
         Boolean readOnlyOption = transactionDefinition.getAttribute(TransactionDefinition.READ_ONLY);
         if (readOnlyOption != null) {
@@ -58,14 +69,14 @@ public class YdbTxSettings {
         this.autoCommit = false;
     }
 
-    public YdbIsolationLevel getIsolationLevel() {
-        return isolationLevel;
+    public IsolationLevel getIsolationLevel() {
+        return isolationLevel.isolationLevel();
     }
 
-    public void setIsolationLevel(YdbIsolationLevel isolationLevel) {
-        this.isolationLevel = isolationLevel;
+    public void setIsolationLevel(IsolationLevel isolationLevel) {
+        this.isolationLevel = YdbIsolationLevelEnum.valueOf(isolationLevel);
 
-        if (isolationLevel.isReadOnly()) {
+        if (this.isolationLevel.isReadOnly()) {
             this.readOnly = true;
         }
     }
@@ -110,13 +121,15 @@ public class YdbTxSettings {
         };
     }
 
-    private static void validate(YdbIsolationLevel isolationLevel, boolean readOnly) {
+    private static void validate(YdbIsolationLevelEnum isolationLevel, boolean readOnly) {
         if (isolationLevel.isReadOnly() && !readOnly) {
-            throw new IllegalArgumentException("Unsupported isolation level " + isolationLevel + " for read write mode");
+            throw new IllegalArgumentException("Unsupported isolation level " + isolationLevel + " for read write " +
+                    "mode");
         }
     }
 
-    private static TxControl<?> txControl(YdbIsolationLevel isolationLevel, boolean isReadOnly, boolean isAutoCommit) {
+    private static TxControl<?> txControl(YdbIsolationLevelEnum isolationLevel, boolean isReadOnly,
+                                          boolean isAutoCommit) {
         validate(isolationLevel, isReadOnly);
         if (!isReadOnly) {
             return TxControl.serializableRw().setCommitTx(isAutoCommit);

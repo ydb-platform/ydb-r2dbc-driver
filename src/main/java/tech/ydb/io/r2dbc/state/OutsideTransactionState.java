@@ -21,13 +21,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
+import io.r2dbc.spi.IsolationLevel;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.ydb.core.Result;
 import tech.ydb.io.r2dbc.FluxDiscardOnCancel;
 import tech.ydb.io.r2dbc.YdbContext;
-import tech.ydb.io.r2dbc.YdbIsolationLevel;
-import tech.ydb.io.r2dbc.YdbTxSettings;
+import tech.ydb.io.r2dbc.settings.YdbTxSettings;
 import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.io.r2dbc.util.ResultExtractor;
@@ -123,7 +123,7 @@ public class OutsideTransactionState extends AbstractConnectionState implements 
     }
 
     @Override
-    public Mono<Void> setIsolationLevel(YdbIsolationLevel isolationLevel) {
+    public Mono<Void> setIsolationLevel(IsolationLevel isolationLevel) {
         return Mono.fromRunnable(() -> this.ydbTxSettings.setIsolationLevel(isolationLevel));
     }
 

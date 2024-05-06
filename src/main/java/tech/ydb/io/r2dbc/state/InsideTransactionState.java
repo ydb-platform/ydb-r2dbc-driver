@@ -20,11 +20,11 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 
+import io.r2dbc.spi.IsolationLevel;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.YdbContext;
-import tech.ydb.io.r2dbc.YdbIsolationLevel;
-import tech.ydb.io.r2dbc.YdbTxSettings;
+import tech.ydb.io.r2dbc.settings.YdbTxSettings;
 import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.io.r2dbc.util.ResultExtractor;
@@ -129,7 +129,7 @@ public final class InsideTransactionState extends AbstractConnectionState implem
     }
 
     @Override
-    public Mono<Void> setIsolationLevel(YdbIsolationLevel isolationLevel) {
+    public Mono<Void> setIsolationLevel(IsolationLevel isolationLevel) {
         if (ydbTxSettings.getIsolationLevel().equals(isolationLevel)) {
             return Mono.empty();
         }

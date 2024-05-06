@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc;
+package tech.ydb.io.r2dbc.settings;
 
+import io.r2dbc.spi.IsolationLevel;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import tech.ydb.io.r2dbc.YdbTransactionDefinition;
 import tech.ydb.table.transaction.Transaction;
 import tech.ydb.table.transaction.TxControl;
 
@@ -79,15 +83,36 @@ public class YdbTxSettingsTest {
     }
 
     @Test
-    public void createFailTest() {
-        Assertions.assertThrows(IllegalArgumentException.class,
-                () -> new YdbTxSettings(YdbIsolationLevel.ONLINE_CONSISTENT_READ_ONLY, false, true));
+    public void setIsolationLevelTest() {
+        YdbTxSettings ydbTxSettings = YdbTxSettings.defaultSettings();
+
+        ydbTxSettings.setIsolationLevel(YdbIsolationLevel.SNAPSHOT_READ_ONLY);
+
+        Assertions.assertEquals(YdbIsolationLevel.SNAPSHOT_READ_ONLY, ydbTxSettings.getIsolationLevel());
     }
 
     @Test
-    public void setReadOnlyIsolationLevelTest() {
+    public void setCustomIsolationLevelTest() {
+        YdbTxSettings ydbTxSettings = YdbTxSettings.defaultSettings();
+
+        ydbTxSettings.setIsolationLevel(IsolationLevel.valueOf("snapshotReadOnly"));
+
+        Assertions.assertEquals(YdbIsolationLevel.SNAPSHOT_READ_ONLY, ydbTxSettings.getIsolationLevel());
+    }
+
+    @Test
+    public void setCustomIsolationLevelErrorTest() {
+        YdbTxSettings ydbTxSettings = YdbTxSettings.defaultSettings();
+
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> ydbTxSettings.setIsolationLevel(IsolationLevel.valueOf("notExistLevel")));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = YdbIsolationLevelEnum.class, mode = EnumSource.Mode.EXCLUDE, names = {"SERIALIZABLE"})
+    public void setReadOnlyIsolationLevelTest(YdbIsolationLevelEnum ydbIsolationLevel) {
         YdbTxSettings ydbTxSettings = new YdbTxSettings(YdbIsolationLevel.SERIALIZABLE, false, true);
-        ydbTxSettings.setIsolationLevel(YdbIsolationLevel.SNAPSHOT_READ_ONLY);
+        ydbTxSettings.setIsolationLevel(ydbIsolationLevel.isolationLevel());
 
         Assertions.assertTrue(ydbTxSettings.isReadOnly());
     }
@@ -97,5 +122,14 @@ public class YdbTxSettingsTest {
         YdbTxSettings ydbTxSettings = new YdbTxSettings(YdbIsolationLevel.SNAPSHOT_READ_ONLY, true, true);
 
         Assertions.assertThrows(IllegalArgumentException.class, () -> ydbTxSettings.setReadOnly(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(YdbIsolationLevelEnum.class)
+    public void txControlTest(YdbIsolationLevelEnum ydbIsolationLevel) {
+        YdbTxSettings ydbTxSettings = YdbTxSettings.defaultSettings();
+        ydbTxSettings.setIsolationLevel(ydbIsolationLevel.isolationLevel());
+
+        ydbTxSettings.txControl();
     }
 }
