@@ -32,6 +32,7 @@ import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.query.YdbSqlParser;
 import tech.ydb.io.r2dbc.query.YdbQuery;
+import tech.ydb.io.r2dbc.settings.YdbTxSettings;
 import tech.ydb.io.r2dbc.state.NextStateResult;
 import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.io.r2dbc.state.CloseState;
@@ -141,11 +142,6 @@ public class YdbConnection implements Connection {
 
     @Override
     public IsolationLevel getTransactionIsolationLevel() {
-        throw new UnsupportedOperationException(
-                "Standard isolation levels not supported, use getYdbTransactionIsolationLevel");
-    }
-
-    public YdbIsolationLevel getYdbTransactionIsolationLevel() {
         return ydbConnectionState.getYdbTxSettings().getIsolationLevel();
     }
 
@@ -187,11 +183,6 @@ public class YdbConnection implements Connection {
 
     @Override
     public Mono<Void> setTransactionIsolationLevel(IsolationLevel isolationLevel) {
-        throw new UnsupportedOperationException(
-                "Standard isolation levels not supported, use setYdbTransactionIsolationLevel");
-    }
-
-    public Mono<Void> setYdbTransactionIsolationLevel(YdbIsolationLevel isolationLevel) {
         return ydbConnectionState.setIsolationLevel(isolationLevel);
     }
 

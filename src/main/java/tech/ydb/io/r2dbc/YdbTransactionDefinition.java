@@ -19,6 +19,7 @@ package tech.ydb.io.r2dbc;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.r2dbc.spi.IsolationLevel;
 import io.r2dbc.spi.Option;
 import io.r2dbc.spi.TransactionDefinition;
 
@@ -26,8 +27,6 @@ import io.r2dbc.spi.TransactionDefinition;
  * @author Egor Kuleshov
  */
 public class YdbTransactionDefinition implements TransactionDefinition {
-    public static final Option<YdbIsolationLevel> YDB_ISOLATION_LEVEL = Option.valueOf("ydbIsolationLevel");
-
     private final Map<Option<?>, Object> options;
 
     public YdbTransactionDefinition() {
@@ -52,8 +51,8 @@ public class YdbTransactionDefinition implements TransactionDefinition {
         return new YdbTransactionDefinition(options);
     }
 
-    public YdbTransactionDefinition isolationLevel(YdbIsolationLevel isolationLevel) {
-        return with(YdbTransactionDefinition.YDB_ISOLATION_LEVEL, isolationLevel);
+    public YdbTransactionDefinition isolationLevel(IsolationLevel isolationLevel) {
+        return with(YdbTransactionDefinition.ISOLATION_LEVEL, isolationLevel);
     }
 
     public YdbTransactionDefinition readOnly(boolean readOnly) {

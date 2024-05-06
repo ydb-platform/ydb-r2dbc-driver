@@ -20,7 +20,7 @@ import java.time.Duration;
 
 import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.YdbContext;
-import tech.ydb.io.r2dbc.YdbTxSettings;
+import tech.ydb.io.r2dbc.settings.YdbTxSettings;
 import tech.ydb.table.settings.RequestSettings;
 
 /**

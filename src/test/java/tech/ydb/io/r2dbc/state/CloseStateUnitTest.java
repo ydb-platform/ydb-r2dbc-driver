@@ -3,12 +3,12 @@ package tech.ydb.io.r2dbc.state;
 import java.time.Duration;
 import java.util.List;
 
+import io.r2dbc.spi.IsolationLevel;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import reactor.test.StepVerifier;
-import tech.ydb.io.r2dbc.YdbIsolationLevel;
-import tech.ydb.io.r2dbc.YdbTxSettings;
+import tech.ydb.io.r2dbc.settings.YdbTxSettings;
 import tech.ydb.table.query.Params;
 
 /**
@@ -70,7 +70,7 @@ public class CloseStateUnitTest {
 
     @Test
     public void setIsolationLevelTest() {
-        YdbIsolationLevel isolationLevel = Mockito.mock(YdbIsolationLevel.class);
+        IsolationLevel isolationLevel = Mockito.mock(IsolationLevel.class);
 
         state.setIsolationLevel(isolationLevel)
                 .as(StepVerifier::create)

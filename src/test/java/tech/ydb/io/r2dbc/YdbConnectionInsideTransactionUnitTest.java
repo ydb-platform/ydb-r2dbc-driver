@@ -29,6 +29,7 @@ import tech.ydb.core.StatusCode;
 import tech.ydb.core.UnexpectedResultException;
 import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbResult;
+import tech.ydb.io.r2dbc.settings.YdbTxSettings;
 import tech.ydb.io.r2dbc.state.OutsideTransactionState;
 import tech.ydb.io.r2dbc.state.CloseState;
 import tech.ydb.io.r2dbc.state.InsideTransactionState;
@@ -51,8 +52,7 @@ import static org.mockito.Mockito.when;
 public class YdbConnectionInsideTransactionUnitTest {
     private static final YdbContext ydbContext = mock(YdbContext.class);
     private static final String txId = "test_tx_id";
-    private static final YdbTxSettings ydbTxSettings =
-            new YdbTxSettings(YdbIsolationLevel.SERIALIZABLE, false, false);
+    private static final YdbTxSettings ydbTxSettings = YdbTxSettings.defaultSettings().withAutoCommit(false);
 
     @Test
     public void executeSchemeQueryTest() {
@@ -151,7 +151,8 @@ public class YdbConnectionInsideTransactionUnitTest {
                 .expectNext(-1L)
                 .verifyComplete();
 
-        Assertions.assertEquals(new OutsideTransactionState(ydbContext, ydbTxSettings), queryExecutor.getCurrentState());
+        Assertions.assertEquals(new OutsideTransactionState(ydbContext, ydbTxSettings),
+                queryExecutor.getCurrentState());
         Mockito.verify(session).close();
     }
 
@@ -182,7 +183,8 @@ public class YdbConnectionInsideTransactionUnitTest {
                 .as(StepVerifier::create)
                 .verifyComplete();
 
-        Assertions.assertEquals(new OutsideTransactionState(ydbContext, ydbTxSettings), queryExecutor.getCurrentState());
+        Assertions.assertEquals(new OutsideTransactionState(ydbContext, ydbTxSettings),
+                queryExecutor.getCurrentState());
         Mockito.verify(session).commitTransaction(eq(txId), any());
         Mockito.verify(session).close();
     }
@@ -215,7 +217,8 @@ public class YdbConnectionInsideTransactionUnitTest {
                 .as(StepVerifier::create)
                 .verifyComplete();
 
-        Assertions.assertEquals(new OutsideTransactionState(ydbContext, ydbTxSettings), queryExecutor.getCurrentState());
+        Assertions.assertEquals(new OutsideTransactionState(ydbContext, ydbTxSettings),
+                queryExecutor.getCurrentState());
         Mockito.verify(session).rollbackTransaction(eq(txId), any());
         Mockito.verify(session).close();
     }
@@ -248,10 +251,9 @@ public class YdbConnectionInsideTransactionUnitTest {
                 .as(StepVerifier::create)
                 .verifyComplete();
 
-        Assertions.assertEquals(new OutsideTransactionState(ydbContext, new YdbTxSettings(
-                ydbTxSettings.getIsolationLevel(),
-                ydbTxSettings.isReadOnly(),
-                true)), queryExecutor.getCurrentState());
+        Assertions.assertEquals(new OutsideTransactionState(ydbContext, ydbTxSettings.withAutoCommit(true)),
+                queryExecutor.getCurrentState()
+        );
         Mockito.verify(session).commitTransaction(eq(txId), any());
         Mockito.verify(session).close();
     }

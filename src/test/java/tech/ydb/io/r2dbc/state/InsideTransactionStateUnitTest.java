@@ -19,6 +19,7 @@ package tech.ydb.io.r2dbc.state;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import io.r2dbc.spi.IsolationLevel;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import reactor.test.StepVerifier;
@@ -27,8 +28,7 @@ import tech.ydb.core.Status;
 import tech.ydb.core.StatusCode;
 import tech.ydb.core.UnexpectedResultException;
 import tech.ydb.io.r2dbc.YdbContext;
-import tech.ydb.io.r2dbc.YdbIsolationLevel;
-import tech.ydb.io.r2dbc.YdbTxSettings;
+import tech.ydb.io.r2dbc.settings.YdbTxSettings;
 import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.proto.ValueProtos;
@@ -323,7 +323,7 @@ public class InsideTransactionStateUnitTest {
         Session session = Mockito.mock(Session.class);
         YdbContext ydbContext = Mockito.mock(YdbContext.class);
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
-        YdbIsolationLevel isolationLevel = Mockito.mock(YdbIsolationLevel.class);
+        IsolationLevel isolationLevel = Mockito.mock(IsolationLevel.class);
         Mockito.when(ydbTxSettings.getIsolationLevel()).thenReturn(isolationLevel);
 
         InsideTransactionState state = new InsideTransactionState(ydbContext, TEST_TX_ID, session, ydbTxSettings);
@@ -342,8 +342,8 @@ public class InsideTransactionStateUnitTest {
         Session session = Mockito.mock(Session.class);
         YdbContext ydbContext = Mockito.mock(YdbContext.class);
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
-        YdbIsolationLevel newIsolationLevel = Mockito.mock(YdbIsolationLevel.class);
-        YdbIsolationLevel oldIsolationLevel = Mockito.mock(YdbIsolationLevel.class);
+        IsolationLevel newIsolationLevel = Mockito.mock(IsolationLevel.class);
+        IsolationLevel oldIsolationLevel = Mockito.mock(IsolationLevel.class);
         Mockito.when(ydbTxSettings.getIsolationLevel()).thenReturn(oldIsolationLevel);
 
         InsideTransactionState state = new InsideTransactionState(ydbContext, TEST_TX_ID, session, ydbTxSettings);
