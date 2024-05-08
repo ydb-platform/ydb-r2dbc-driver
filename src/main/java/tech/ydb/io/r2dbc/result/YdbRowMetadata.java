@@ -16,35 +16,60 @@
 
 package tech.ydb.io.r2dbc.result;
 
-import io.r2dbc.spi.ColumnMetadata;
 import io.r2dbc.spi.RowMetadata;
-import java.util.Collection;
+
+import java.util.HashMap;
 import java.util.List;
-import tech.ydb.table.result.ResultSetReader;
+import java.util.Map;
+import java.util.Objects;
 
 /**
- * @author Kirill Kurdyukov
+ * @author Egor Kuleshov
  */
 public final class YdbRowMetadata implements RowMetadata {
-    private final ResultSetReader resultSetReader;
+    private final List<YdbColumnMetadata> ydbColumnMetadatas;
+    private final Map<String, Integer> nameToIndex;
 
-    public YdbRowMetadata(ResultSetReader resultSetReader) {
-        this.resultSetReader = resultSetReader;
+    public YdbRowMetadata(List<YdbColumnMetadata> ydbColumnMetadatas) {
+        this.ydbColumnMetadatas = ydbColumnMetadatas;
+        this.nameToIndex = new HashMap<>(ydbColumnMetadatas.size());
+        for (int index = 0; index < ydbColumnMetadatas.size(); index++) {
+            nameToIndex.put(ydbColumnMetadatas.get(index).getName(), index);
+        }
     }
 
     @Override
-    public ColumnMetadata getColumnMetadata(int index) {
-        return null;
+    public YdbColumnMetadata getColumnMetadata(int index) {
+        Objects.checkIndex(index, ydbColumnMetadatas.size());
+        return ydbColumnMetadatas.get(index);
     }
 
     @Override
-    public ColumnMetadata getColumnMetadata(String name) {
-        resultSetReader.getColumn(name).getType().getKind();
-        return null;
+    public YdbColumnMetadata getColumnMetadata(String name) {
+        validateColumnName(name);
+
+        return ydbColumnMetadatas.get(nameToIndex.get(name));
     }
 
     @Override
-    public List<? extends ColumnMetadata> getColumnMetadatas() {
-        return null;
+    public List<YdbColumnMetadata> getColumnMetadatas() {
+        return ydbColumnMetadatas;
+    }
+
+    @Override
+    public boolean contains(String columnName) {
+        return nameToIndex.containsKey(columnName);
+    }
+
+    public int getColumnIndex(String name) {
+        validateColumnName(name);
+
+        return nameToIndex.get(name);
+    }
+
+    private void validateColumnName(String name) {
+        if (!contains(name)) {
+            throw new IllegalArgumentException(String.format("Column with name '%s' does not exist", name));
+        }
     }
 }

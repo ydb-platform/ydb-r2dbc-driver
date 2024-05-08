@@ -27,7 +27,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 
 import tech.ydb.io.r2dbc.type.YdbType;
-import tech.ydb.table.result.ValueReader;
 import tech.ydb.table.values.OptionalType;
 import tech.ydb.table.values.Type;
 import tech.ydb.table.values.Value;
@@ -81,14 +80,12 @@ public class YdbParameterResolver {
         return resolveClass(param.getClass()).createValue(param);
     }
 
-    public static <T> T resolveResult(ValueReader valueReader, Class<T> tClass) {
-        Type type = valueReader.getType();
+    public static YdbType resolveResultType(Type type) {
         if (type instanceof OptionalType) {
-            type = type.unwrapOptional();
+            return TYPE_YDB_TYPE.get(type.unwrapOptional());
         }
 
-        Object result = TYPE_YDB_TYPE.get(type).getObject(valueReader);
-        return tClass.cast(result);
+        return TYPE_YDB_TYPE.get(type);
     }
 
     public static Value<?> resolveEmptyValue(Class<?> clazz) {

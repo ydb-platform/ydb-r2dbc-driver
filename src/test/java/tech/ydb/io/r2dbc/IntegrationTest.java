@@ -17,6 +17,7 @@
 package tech.ydb.io.r2dbc;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
@@ -54,7 +55,7 @@ public class IntegrationTest extends IntegrationBaseTest {
                         "select * from t1 order by id asc;" +
                                 "select * from t1 order by id desc;")
                 .execute()
-                .flatMap(ydbResult -> ydbResult.map((row, rowMetadata) -> row.get("id")))
+                .concatMap(ydbResult -> ydbResult.map((row, rowMetadata) -> row.get("id")))
                 .as(StepVerifier::create)
                 .expectNext(123)
                 .expectNext(124)
@@ -87,11 +88,19 @@ public class IntegrationTest extends IntegrationBaseTest {
         upsertData(r2dbc.connection())
                 .thenMany(r2dbc.connection().createStatement("select * from t1 order by id asc;")
                         .execute())
-                .flatMap(ydbResult -> ydbResult.map((row, rowMetadata) -> row.get("id")))
+                .concatMap(ydbResult -> ydbResult.map((row, rowMetadata) -> row.get("id")))
                 .as(StepVerifier::create)
                 .expectNext(123)
                 .expectNext(124)
                 .verifyComplete();
+    }
+
+    @Test
+    public void getMetadata() {
+        YdbConnectionMetadata ydbConnectionMetadata = r2dbc.connection().getMetadata();
+
+        Assertions.assertEquals("YDB", ydbConnectionMetadata.getDatabaseProductName());
+        Assertions.assertEquals("UNKNOWN", ydbConnectionMetadata.getDatabaseVersion());
     }
 
     private static Flux<YdbResult> upsertData(YdbConnection connection) {

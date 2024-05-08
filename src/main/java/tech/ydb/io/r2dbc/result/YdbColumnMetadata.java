@@ -14,30 +14,48 @@
  * limitations under the License.
  */
 
-package tech.ydb.io.r2dbc;
+package tech.ydb.io.r2dbc.result;
 
 import io.r2dbc.spi.ColumnMetadata;
+import io.r2dbc.spi.Nullability;
+import tech.ydb.io.r2dbc.parameter.YdbParameterResolver;
 import tech.ydb.io.r2dbc.type.YdbType;
+import tech.ydb.table.values.OptionalType;
 
 /**
  * @author Kirill Kurdyukov
  */
 public class YdbColumnMetadata implements ColumnMetadata {
-    private final YdbType ydbType;
+    private final tech.ydb.table.values.Type type;
     private final String name;
 
-    public YdbColumnMetadata(YdbType ydbType, String name) {
-        this.ydbType = ydbType;
+    public YdbColumnMetadata(tech.ydb.table.values.Type type, String name) {
+        this.type = type;
         this.name = name;
     }
 
     @Override
+    public Class<?> getJavaType() {
+        return YdbParameterResolver.resolveResultType(type).getJavaType();
+    }
+
+    @Override
     public YdbType getType() {
-        return ydbType;
+        return YdbParameterResolver.resolveResultType(type);
     }
 
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public tech.ydb.table.values.Type getNativeTypeMetadata() {
+        return type;
+    }
+
+    @Override
+    public Nullability getNullability() {
+        return type instanceof OptionalType ? Nullability.NULLABLE : Nullability.NON_NULL;
     }
 }

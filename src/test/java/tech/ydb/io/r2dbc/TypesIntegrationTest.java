@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.stream.Stream;
 
+import io.r2dbc.spi.Nullability;
 import io.r2dbc.spi.Result;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -77,7 +78,11 @@ public class TypesIntegrationTest extends IntegrationBaseTest {
         r2dbc.connection().createStatement("SELECT * from t1_" + type)
                 .execute()
                 .flatMap(ydbResult ->
-                        ydbResult.map((row, rowMetadata) -> row.get("test_value", type.getJavaType()) == null))
+                        ydbResult.map((row, rowMetadata) -> rowMetadata.contains("test_value")
+                                && rowMetadata.getColumnMetadata("test_value").getType().equals(type)
+                                && rowMetadata.getColumnMetadata("test_value").getNullability().equals(Nullability.NULLABLE)
+                                && row.get("test_value", type.getJavaType()) == null)
+                )
                 .as(StepVerifier::create)
                 .expectNext(true)
                 .verifyComplete();

@@ -19,7 +19,6 @@ package tech.ydb.io.r2dbc;
 import com.google.common.annotations.VisibleForTesting;
 import io.r2dbc.spi.Batch;
 import io.r2dbc.spi.Connection;
-import io.r2dbc.spi.ConnectionMetadata;
 import io.r2dbc.spi.IsolationLevel;
 import io.r2dbc.spi.TransactionDefinition;
 import io.r2dbc.spi.ValidationDepth;
@@ -136,8 +135,8 @@ public class YdbConnection implements Connection {
     }
 
     @Override
-    public ConnectionMetadata getMetadata() {
-        return null;
+    public YdbConnectionMetadata getMetadata() {
+        return YdbConnectionMetadata.INSTANCE;
     }
 
     @Override

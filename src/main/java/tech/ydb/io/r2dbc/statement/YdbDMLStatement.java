@@ -35,7 +35,7 @@ public class YdbDMLStatement extends YdbStatement {
 
         String yql = query.getYqlQuery(bindings.getCurrent());
         return Flux.fromIterable(bindings)
-                .flatMap(binding -> connection.executeDataQuery(
+                .concatMap(binding -> connection.executeDataQuery(
                                 yql,
                                 binding.toParams(),
                                 query.getOperationTypes()

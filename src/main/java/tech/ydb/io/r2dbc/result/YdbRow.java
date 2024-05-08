@@ -16,42 +16,46 @@
 
 package tech.ydb.io.r2dbc.result;
 
+import java.util.List;
+
 import io.r2dbc.spi.Row;
 import io.r2dbc.spi.RowMetadata;
-import tech.ydb.io.r2dbc.parameter.YdbParameterResolver;
-import tech.ydb.table.result.ResultSetReader;
-import tech.ydb.table.result.ValueReader;
+import tech.ydb.table.values.OptionalValue;
+import tech.ydb.table.values.Value;
 
 /**
  * @author Egor Kuleshov
  */
 public final class YdbRow implements Row {
-    private final ResultSetReader resultSetReader;
-    private final int rowIndex;
+    private final YdbRowMetadata ydbRowMetadata;
+    private final List<Value<?>> values;
 
-    public YdbRow(ResultSetReader resultSetReader, int rowIndex) {
-        this.resultSetReader = resultSetReader;
-        this.rowIndex = rowIndex;
+    public YdbRow(YdbRowMetadata ydbRowMetadata, List<Value<?>> values) {
+        this.ydbRowMetadata = ydbRowMetadata;
+        this.values = values;
     }
 
     @Override
     public RowMetadata getMetadata() {
-        return new YdbRowMetadata(resultSetReader);
+        return ydbRowMetadata;
     }
 
     @Override
     public <T> T get(int index, Class<T> type) {
-        resultSetReader.setRowIndex(rowIndex);
-        ValueReader valueReader = resultSetReader.getColumn(index);
-        if (valueReader.getValue().asOptional().isPresent()) {
-            return YdbParameterResolver.resolveResult(valueReader, type);
+        Value<?> value = values.get(index);
+        if (value instanceof OptionalValue) {
+            if (!value.asOptional().isPresent()) {
+                return null;
+            } else {
+                value = value.asOptional().get();
+            }
         }
 
-        return null;
+        return type.cast(ydbRowMetadata.getColumnMetadata(index).getType().getObject(value));
     }
 
     @Override
     public <T> T get(String name, Class<T> type) {
-        return get(resultSetReader.getColumnIndex(name), type);
+        return get(ydbRowMetadata.getColumnIndex(name), type);
     }
 }
