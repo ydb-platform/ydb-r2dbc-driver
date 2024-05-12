@@ -28,7 +28,9 @@ import io.r2dbc.spi.RowMetadata;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.annotation.Nullable;
 import tech.ydb.table.result.ResultSetReader;
+import tech.ydb.table.values.Value;
 
 /**
  * @author Egor Kuleshov
@@ -47,14 +49,39 @@ public class YdbResult implements Result {
     }
 
     public YdbResult(ResultSetReader resultSetReader) {
-        List<RowSegment> rowSegments = new ArrayList<>(resultSetReader.getRowCount());
+        this.rowsUpdated = DEFAULT_SELECT_ROWS_UPDATED;
+        this.segments = Flux.generate(
+                YdbRowMetadataState::new,
+                (state, sink) -> {
+                    if (!resultSetReader.next()) {
+                        sink.complete();
+                        return state;
+                    }
+                    YdbRowMetadataState currentState = state;
+                    if (!state.isInitialized()) {
+                        currentState = new YdbRowMetadataState(getYdbRowMetadata(resultSetReader));
+                    }
+                    List<Value<?>> values = new ArrayList<>(resultSetReader.getColumnCount());
+                    for (int index = 0; index < resultSetReader.getColumnCount(); index++) {
+                        values.add(resultSetReader.getColumn(index).getValue());
+                    }
 
-        for (int index = 0; index < resultSetReader.getRowCount(); index++) {
-            rowSegments.add(new RowSegment(new YdbRow(resultSetReader, index)));
+                    sink.next(new RowSegment(new YdbRow(currentState.getYdbRowMetadata(), values)));
+                    return currentState;
+                });
+    }
+
+
+    private static YdbRowMetadata getYdbRowMetadata(ResultSetReader resultSetReader) {
+        List<YdbColumnMetadata> ydbColumnMetadatas = new ArrayList<>(resultSetReader.getColumnCount());
+        for (int index = 0; index < resultSetReader.getColumnCount(); index++) {
+            ydbColumnMetadatas.add(new YdbColumnMetadata(
+                    resultSetReader.getColumnType(index),
+                    resultSetReader.getColumnName(index)
+            ));
         }
 
-        this.segments = Flux.fromIterable(rowSegments);
-        this.rowsUpdated = DEFAULT_SELECT_ROWS_UPDATED;
+        return new YdbRowMetadata(ydbColumnMetadatas);
     }
 
     /**
@@ -80,6 +107,27 @@ public class YdbResult implements Result {
     @Override
     public <T> Flux<T> flatMap(Function<Segment, ? extends Publisher<? extends T>> function) {
         return segments.flatMap(function);
+    }
+
+    private static class YdbRowMetadataState {
+        private final YdbRowMetadata ydbRowMetadata;
+
+        public YdbRowMetadataState() {
+            this.ydbRowMetadata = null;
+        }
+
+        public YdbRowMetadataState(YdbRowMetadata ydbRowMetadata) {
+            this.ydbRowMetadata = ydbRowMetadata;
+        }
+
+        public boolean isInitialized() {
+            return ydbRowMetadata != null;
+        }
+
+        @Nullable
+        public YdbRowMetadata getYdbRowMetadata() {
+            return ydbRowMetadata;
+        }
     }
 
     private static class RowSegment implements Result.RowSegment {

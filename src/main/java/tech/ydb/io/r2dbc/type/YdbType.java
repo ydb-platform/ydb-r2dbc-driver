@@ -28,9 +28,8 @@ import java.time.ZonedDateTime;
 import java.util.UUID;
 import java.util.function.Function;
 
-import tech.ydb.table.result.PrimitiveReader;
-import tech.ydb.table.result.ValueReader;
 import tech.ydb.table.values.DecimalType;
+import tech.ydb.table.values.DecimalValue;
 import tech.ydb.table.values.PrimitiveType;
 import tech.ydb.table.values.PrimitiveValue;
 import tech.ydb.table.values.Value;
@@ -45,35 +44,35 @@ public enum YdbType implements Type {
      */
     BOOL(Boolean.class, PrimitiveType.Bool,
             obj -> PrimitiveValue.newBool((Boolean) obj),
-            PrimitiveReader::getBool),
+            value -> value.asData().getBool()),
 
     /**
      * A signed integer. Acceptable values: from -2^7 to 2^7–1.
      */
     INT8(Byte.class, PrimitiveType.Int8,
             obj -> PrimitiveValue.newInt8((Byte) obj),
-            PrimitiveReader::getInt8),
+            value -> value.asData().getInt8()),
 
     /**
      * A signed integer. Acceptable values: from –2^15 to 2^15–1.
      */
     INT16(Short.class, PrimitiveType.Int16,
             obj -> PrimitiveValue.newInt16((Short) obj),
-            PrimitiveReader::getInt16),
+            value -> value.asData().getInt16()),
 
     /**
      * A signed integer. Acceptable values: from –2^31 to 2^31–1.
      */
     INT32(Integer.class, PrimitiveType.Int32,
             obj -> PrimitiveValue.newInt32((Integer) obj),
-            ValueReader::getInt32),
+            value -> value.asData().getInt32()),
 
     /**
      * A signed integer. Acceptable values: from –2^63 to 2^63–1.
      */
     INT64(Long.class, PrimitiveType.Int64,
             obj -> PrimitiveValue.newInt64((Long) obj),
-            ValueReader::getInt64),
+            value -> value.asData().getInt64()),
 
     /**
      * A real number with variable precision, 4 bytes in size.
@@ -81,7 +80,7 @@ public enum YdbType implements Type {
      */
     FLOAT(Float.class, PrimitiveType.Float,
             obj -> PrimitiveValue.newFloat((Float) obj),
-            ValueReader::getFloat),
+            value -> value.asData().getFloat()),
 
     /**
      * A real number with variable precision, 8 bytes in size.
@@ -89,21 +88,21 @@ public enum YdbType implements Type {
      */
     DOUBLE(Double.class, PrimitiveType.Double,
             obj -> PrimitiveValue.newDouble((Double) obj),
-            ValueReader::getDouble),
+            value -> value.asData().getDouble()),
 
     /**
      * A binary data, synonym for YDB type String
      */
     BYTES(byte[].class, PrimitiveType.Bytes,
             obj -> PrimitiveValue.newBytes((byte[]) obj),
-            ValueReader::getBytes),
+            value -> value.asData().getBytes()),
 
     /**
      * Text encoded in UTF-8, synonym for YDB type Utf8
      */
     TEXT(String.class, PrimitiveType.Text,
             obj -> PrimitiveValue.newText((String) obj),
-            ValueReader::getText),
+            value -> value.asData().getText()),
 
     /**
      * YSON in a textual or binary representation.
@@ -111,70 +110,70 @@ public enum YdbType implements Type {
      */
     YSON(byte[].class, PrimitiveType.Yson,
             obj -> PrimitiveValue.newYson((byte[]) obj),
-            ValueReader::getYson),
+            value -> value.asData().getYson()),
 
     /**
      * JSON represented as text. Doesn't support matching, can't be used in the primary key
      */
     JSON(String.class, PrimitiveType.Json,
             obj -> PrimitiveValue.newJson((String) obj),
-            ValueReader::getJson),
+            value -> value.asData().getJson()),
 
     /**
      * Universally unique identifier UUID. Not supported for table columns
      */
     UUID(UUID.class, PrimitiveType.Uuid,
             obj -> PrimitiveValue.newUuid((UUID) obj),
-            ValueReader::getUuid),
+            value -> value.asData().getUuidJdk()),
 
     /**
      * Date, precision to the day
      */
     DATE(LocalDate.class, PrimitiveType.Date,
             obj -> PrimitiveValue.newDate((LocalDate) obj),
-            ValueReader::getDate),
+            value -> value.asData().getDate()),
 
     /**
      * Date/time, precision to the second
      */
     DATETIME(LocalDateTime.class, PrimitiveType.Datetime,
             obj -> PrimitiveValue.newDatetime((LocalDateTime) obj),
-            ValueReader::getDatetime),
+            value -> value.asData().getDatetime()),
 
     /**
      * Date/time, precision to the microsecond
      */
     TIMESTAMP(Instant.class, PrimitiveType.Timestamp,
             obj -> PrimitiveValue.newTimestamp((Instant) obj),
-            ValueReader::getTimestamp),
+            value -> value.asData().getTimestamp()),
 
     /**
      * Time interval (signed), precision to microseconds
      */
     INTERVAL(Duration.class, PrimitiveType.Interval,
             obj -> PrimitiveValue.newInterval((Duration) obj),
-            ValueReader::getInterval),
+            value -> value.asData().getInterval()),
 
     /**
      * Date with time zone label, precision to the day
      */
     TZ_DATE(ZonedDateTime.class, PrimitiveType.TzDate,
             obj -> PrimitiveValue.newTzDate((ZonedDateTime) obj),
-            ValueReader::getTzDate),
+            value -> value.asData().getTzDate()),
 
     /**
      * Date/time with time zone label, precision to the second
      */
     TZ_DATETIME(ZonedDateTime.class, PrimitiveType.TzDatetime,
             obj -> PrimitiveValue.newTzDatetime((ZonedDateTime) obj),
-            ValueReader::getTzDatetime),
+            value -> value.asData().getTzDatetime()),
 
     /**
      * Date/time with time zone label, precision to the microsecond
      */
     TZ_TIMESTAMP(ZonedDateTime.class, PrimitiveType.TzTimestamp,
             obj -> PrimitiveValue.newTzTimestamp((ZonedDateTime) obj),
-            ValueReader::getTzTimestamp),
+            value -> value.asData().getTzTimestamp()),
 
     /**
      * JSON in an indexed binary representation.
@@ -182,7 +181,7 @@ public enum YdbType implements Type {
      */
     JSON_DOCUMENT(String.class, PrimitiveType.JsonDocument,
             obj -> PrimitiveValue.newJsonDocument((String) obj),
-            ValueReader::getJsonDocument),
+            value -> value.asData().getJsonDocument()),
 
     /**
      * A real number with the specified precision, up to 35 decimal digits.
@@ -192,17 +191,17 @@ public enum YdbType implements Type {
      */
     DECIMAL(BigDecimal.class, DecimalType.getDefault(),
             obj -> DecimalType.getDefault().newValue((BigDecimal) obj),
-            valueReader -> valueReader.getDecimal().toBigDecimal());
+            value -> ((DecimalValue) value).toBigDecimal());
 
     private final Class<?> javaType;
     private final tech.ydb.table.values.Type ydbType;
     private final Function<Object, Value<?>> valueConstructor;
-    private final Function<ValueReader, Object> valueGetter;
+    private final Function<Value<?>, Object> valueGetter;
 
     YdbType(Class<?> javaType,
             tech.ydb.table.values.Type ydbType,
             Function<Object, Value<?>> valueConstructor,
-            Function<ValueReader, Object> valueGetter) {
+            Function<Value<?>, Object> valueGetter) {
         this.javaType = javaType;
         this.ydbType = ydbType;
         this.valueConstructor = valueConstructor;
@@ -227,7 +226,7 @@ public enum YdbType implements Type {
         return valueConstructor.apply(obj);
     }
 
-    public Object getObject(ValueReader value) {
+    public Object getObject(Value<?> value) {
         return valueGetter.apply(value);
     }
 
