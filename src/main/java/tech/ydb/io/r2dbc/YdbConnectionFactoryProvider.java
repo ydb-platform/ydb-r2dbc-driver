@@ -26,6 +26,7 @@ import tech.ydb.core.grpc.BalancingSettings;
 import tech.ydb.core.grpc.GrpcCompression;
 import tech.ydb.core.grpc.GrpcTransport;
 import tech.ydb.core.grpc.GrpcTransportBuilder;
+import tech.ydb.io.r2dbc.settings.YdbTxSettings;
 import tech.ydb.table.TableClient;
 
 /**
@@ -38,14 +39,20 @@ public final class YdbConnectionFactoryProvider implements ConnectionFactoryProv
     private static final int SESSION_POOL_DEFAULT_MIN_SIZE = 10;
     private static final int SESSION_POOL_DEFAULT_MAX_SIZE = 100;
     private static final Duration SESSION_KEEP_ALIVE_DEFAULT_TIME = Duration.ofMinutes(5);
+    private static final int STATEMENT_CACHE_DEFAULT_SIZE = 256;
+    private static final Duration SESSION_DEFAULT_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration DEADLINE_DEFAULT_TIMEOUT = Duration.ZERO;
 
     private static final Option<Integer> SESSION_POOL_MIN_SIZE = Option.valueOf("sessionPoolMinSize");
     private static final Option<Integer> SESSION_POOL_MAX_SIZE = Option.valueOf("sessionPoolMaxSize");
     private static final Option<Duration> SESSION_KEEP_ALIVE_TIME = Option.valueOf("sessionKeepAliveTime");
     private static final Option<Duration> SESSION_MAX_IDLE_TIME = Option.valueOf("sessionMaxIdleTime");
+    private static final Option<Duration> SESSION_TIMEOUT = Option.valueOf("sessionTimeout");
+    private static final Option<Duration> DEADLINE_TIMEOUT = Option.valueOf("deadlineTimeout");
     private static final Option<Boolean> KEEP_QUERY_TEXT = Option.valueOf("keepQueryText");
     private static final Option<GrpcCompression> GRPC_COMPRESSION = Option.valueOf("grpcCompression");
     private static final Option<BalancingSettings.Policy> BALANCING_POLICY = Option.valueOf("balancingPolicy");
+    private static final Option<Integer> STATEMENT_CACHE_SIZE = Option.valueOf("statementCacheQueries");
     private static final Option<byte[]> SECURE_CONNECTION_CERTIFICATE = Option.valueOf("secureConnectionCertificate");
     private static final Option<Boolean> SECURE_CONNECTION = Option.valueOf("secureConnection");
     private static final Option<String> SA_FILE = Option.valueOf("saFile"); // TODO
@@ -83,7 +90,13 @@ public final class YdbConnectionFactoryProvider implements ConnectionFactoryProv
         optionExtractor.extractThenConsume(SESSION_MAX_IDLE_TIME, tableClientBuilder::sessionMaxIdleTime);
         optionExtractor.extractThenConsume(KEEP_QUERY_TEXT, tableClientBuilder::keepQueryText);
 
-        return new YdbConnectionFactory(new YdbContext(tableClientBuilder.build()));
+        return new YdbConnectionFactory(new YdbContext(
+                tableClientBuilder.build(),
+                optionExtractor.extractOrDefault(SESSION_TIMEOUT, SESSION_DEFAULT_TIMEOUT),
+                optionExtractor.extractOrDefault(DEADLINE_TIMEOUT, DEADLINE_DEFAULT_TIMEOUT),
+                YdbTxSettings.defaultSettings(),
+                optionExtractor.extractOrDefault(STATEMENT_CACHE_SIZE, STATEMENT_CACHE_DEFAULT_SIZE)
+        ));
     }
 
     @Override

@@ -30,6 +30,7 @@ import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import tech.ydb.io.r2dbc.YdbConnection;
 import tech.ydb.io.r2dbc.YdbContext;
+import tech.ydb.io.r2dbc.state.OutsideTransactionState;
 import tech.ydb.table.TableClient;
 import tech.ydb.test.integration.YdbHelperFactory;
 import tech.ydb.test.junit5.YdbHelperExtension;
@@ -51,7 +52,10 @@ public class R2dbcConnectionExtension implements ExecutionCondition,
     private void register(ExtensionContext ctx) {
         Assert.assertFalse("Dublicate of context registration", map.containsKey(ctx));
 
-        YdbConnection connection = new YdbConnection(ydbContext);
+        YdbConnection connection = new YdbConnection(
+                ydbContext,
+                new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings())
+        );
         map.put(ctx, connection);
         stack.push(connection);
     }

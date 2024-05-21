@@ -19,7 +19,12 @@ package tech.ydb.io.r2dbc;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import tech.ydb.core.Result;
+import tech.ydb.io.r2dbc.query.YdbQuery;
+import tech.ydb.io.r2dbc.query.YdbSqlParser;
 import tech.ydb.io.r2dbc.settings.YdbTxSettings;
 import tech.ydb.table.Session;
 import tech.ydb.table.TableClient;
@@ -31,17 +36,27 @@ public class YdbContext {
     private final Duration createSessionTimeout;
     private final Duration defaultTimeout;
     private final YdbTxSettings defaultYdbTxSettings;
+    private final Cache<String, YdbQuery> queriesCache;
 
-    public YdbContext(TableClient tableClient, Duration createSessionTimeout, Duration defaultTimeout,
-                      YdbTxSettings defaultYdbTxSettings) {
+    public YdbContext(TableClient tableClient,
+                      Duration createSessionTimeout,
+                      Duration defaultTimeout,
+                      YdbTxSettings defaultYdbTxSettings,
+                      int cacheSize) {
         this.tableClient = tableClient;
         this.createSessionTimeout = createSessionTimeout;
         this.defaultTimeout = defaultTimeout;
         this.defaultYdbTxSettings = defaultYdbTxSettings;
+        if (cacheSize > 0) {
+            queriesCache = CacheBuilder.newBuilder().maximumSize(cacheSize).build();
+        } else {
+            queriesCache = null;
+        }
     }
 
+    @VisibleForTesting
     public YdbContext(TableClient tableClient) {
-        this(tableClient, Duration.ofSeconds(5), Duration.ofSeconds(2), YdbTxSettings.defaultSettings());
+        this(tableClient, Duration.ofSeconds(5), Duration.ofSeconds(2), YdbTxSettings.defaultSettings(), 256);
     }
 
     public CompletableFuture<Result<Session>> getSession() {
@@ -58,5 +73,19 @@ public class YdbContext {
 
     public YdbTxSettings getDefaultYdbTxSettings() {
         return defaultYdbTxSettings;
+    }
+
+    public YdbQuery findOrParseYdbQuery(String sql) {
+        if (queriesCache == null) {
+            return YdbSqlParser.parse(sql);
+        }
+
+        YdbQuery cached = queriesCache.getIfPresent(sql);
+        if (cached == null) {
+            cached = YdbSqlParser.parse(sql);
+            queriesCache.put(sql, cached);
+        }
+
+        return cached;
     }
 }

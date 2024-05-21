@@ -60,7 +60,7 @@ public class YdbConnectionInsideTransactionUnitTest {
         when(session.executeSchemeQuery(any(), any())).thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
 
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeSchemeQuery("test")
                 .flatMap(YdbResult::getRowsUpdated)
@@ -87,7 +87,7 @@ public class YdbConnectionInsideTransactionUnitTest {
         ));
 
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
                 .flatMap(YdbResult::getRowsUpdated)
@@ -115,7 +115,7 @@ public class YdbConnectionInsideTransactionUnitTest {
         ));
 
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
                 .flatMap(YdbResult::getRowsUpdated)
@@ -143,7 +143,7 @@ public class YdbConnectionInsideTransactionUnitTest {
         ));
 
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
                 .flatMap(YdbResult::getRowsUpdated)
@@ -160,7 +160,7 @@ public class YdbConnectionInsideTransactionUnitTest {
     public void beginTransactionTest() {
         Session session = mock(Session.class);
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.beginTransaction()
                 .as(StepVerifier::create)
@@ -177,7 +177,7 @@ public class YdbConnectionInsideTransactionUnitTest {
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
         when(session.commitTransaction(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.commitTransaction()
                 .as(StepVerifier::create)
@@ -195,7 +195,7 @@ public class YdbConnectionInsideTransactionUnitTest {
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
         when(session.commitTransaction(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Status.of(StatusCode.ABORTED)));
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.commitTransaction()
                 .as(StepVerifier::create)
@@ -211,7 +211,7 @@ public class YdbConnectionInsideTransactionUnitTest {
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
         when(session.rollbackTransaction(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.rollbackTransaction()
                 .as(StepVerifier::create)
@@ -229,7 +229,7 @@ public class YdbConnectionInsideTransactionUnitTest {
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
         when(session.rollbackTransaction(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Status.of(StatusCode.ABORTED)));
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.rollbackTransaction()
                 .as(StepVerifier::create)
@@ -243,7 +243,7 @@ public class YdbConnectionInsideTransactionUnitTest {
     public void setAutoCommitTrueTest() {
         Session session = mock(Session.class);
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
         when(session.commitTransaction(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
 
@@ -262,7 +262,7 @@ public class YdbConnectionInsideTransactionUnitTest {
     public void setAutoCommitFalseTest() {
         Session session = mock(Session.class);
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.setAutoCommit(false)
                 .as(StepVerifier::create)
@@ -276,7 +276,7 @@ public class YdbConnectionInsideTransactionUnitTest {
     public void closeTest() {
         Session session = mock(Session.class);
         YdbConnectionState state = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
         when(session.commitTransaction(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
 
