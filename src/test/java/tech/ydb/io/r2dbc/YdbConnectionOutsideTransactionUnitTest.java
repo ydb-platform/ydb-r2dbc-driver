@@ -63,7 +63,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
 
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeSchemeQuery("test")
                 .flatMap(YdbResult::getRowsUpdated)
@@ -82,7 +82,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
 
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeSchemeQuery("test")
                 .flatMap(YdbResult::getRowsUpdated)
@@ -112,7 +112,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
 
         YdbTxSettings ydbTxSettings = ydbContext.getDefaultYdbTxSettings();
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
                 .flatMap(io.r2dbc.spi.Result::getRowsUpdated)
@@ -141,7 +141,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
 
         YdbTxSettings ydbTxSettings = ydbContext.getDefaultYdbTxSettings();
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
                 .flatMap(io.r2dbc.spi.Result::getRowsUpdated)
@@ -163,7 +163,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
 
         YdbTxSettings ydbTxSettings = ydbContext.getDefaultYdbTxSettings();
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
                 .flatMap(io.r2dbc.spi.Result::getRowsUpdated)
@@ -186,7 +186,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
 
         YdbTxSettings ydbTxSettings = ydbContext.getDefaultYdbTxSettings();
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
                 .flatMap(io.r2dbc.spi.Result::getRowsUpdated)
@@ -208,7 +208,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
 
         YdbTxSettings ydbTxSettings = ydbContext.getDefaultYdbTxSettings();
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
                 .flatMap(io.r2dbc.spi.Result::getRowsUpdated)
@@ -229,7 +229,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
 
         YdbTxSettings ydbTxSettings = ydbContext.getDefaultYdbTxSettings();
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
                 .flatMap(io.r2dbc.spi.Result::getRowsUpdated)
@@ -262,7 +262,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
 
         YdbTxSettings ydbTxSettings = ydbContext.getDefaultYdbTxSettings();
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeDataQuery("test", Params.empty(), List.of(OperationType.SELECT))
                 .flatMap(io.r2dbc.spi.Result::getRowsUpdated)
@@ -287,7 +287,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         Transaction transaction = Mockito.mock(Transaction.class);
         when(transaction.getId()).thenReturn("test_tx_id");
         when(session.beginTransaction(any(), any())).thenReturn(CompletableFuture.completedFuture(Result.success(transaction)));
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         Mono<Void> beginTransactionMono = queryExecutor.beginTransaction();
 
@@ -313,7 +313,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         when(transaction.getId()).thenReturn("test_tx_id");
         when(session.beginTransaction(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.fail(Status.of(StatusCode.ABORTED))));
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.beginTransaction()
                 .as(StepVerifier::create)
@@ -329,7 +329,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
 
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.commitTransaction()
                 .as(StepVerifier::create)
@@ -343,7 +343,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
 
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.rollbackTransaction()
                 .as(StepVerifier::create)
@@ -357,7 +357,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         YdbTxSettings ydbTxSettings = ydbContext.getDefaultYdbTxSettings();
 
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.setAutoCommit(true)
                 .as(StepVerifier::create)
@@ -371,7 +371,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         YdbTxSettings ydbTxSettings = ydbContext.getDefaultYdbTxSettings();
 
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.setAutoCommit(false)
                 .as(StepVerifier::create)
@@ -386,7 +386,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
 
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.close()
                 .as(StepVerifier::create)
@@ -403,7 +403,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
 
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeSchemeQuery("test")
                 .as(StepVerifier::create)
@@ -417,7 +417,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
 
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeSchemeQuery("test")
                 .map(YdbResult::getRowsUpdated)
@@ -433,7 +433,7 @@ public class YdbConnectionOutsideTransactionUnitTest {
         when(client.createSession(any())).thenReturn(CompletableFuture.completedFuture(Result.success(session)));
 
         YdbConnectionState state = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
-        YdbConnection queryExecutor = new YdbConnection(state);
+        YdbConnection queryExecutor = new YdbConnection(ydbContext, state);
 
         queryExecutor.executeSchemeQuery("test")
                 .as(StepVerifier::create)

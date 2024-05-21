@@ -29,13 +29,11 @@ import java.util.List;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.query.OperationType;
-import tech.ydb.io.r2dbc.query.YdbSqlParser;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 import tech.ydb.io.r2dbc.settings.YdbTxSettings;
 import tech.ydb.io.r2dbc.state.NextStateResult;
 import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.io.r2dbc.state.CloseState;
-import tech.ydb.io.r2dbc.state.OutsideTransactionState;
 import tech.ydb.io.r2dbc.state.YdbConnectionState;
 import tech.ydb.io.r2dbc.statement.YdbDMLStatement;
 import tech.ydb.io.r2dbc.statement.YdbDDLStatement;
@@ -46,13 +44,11 @@ import tech.ydb.table.query.Params;
  * @author Egor Kuleshov
  */
 public class YdbConnection implements Connection {
+    private final YdbContext ydbContext;
     private volatile YdbConnectionState ydbConnectionState;
 
-    public YdbConnection(YdbContext ydbContext) {
-        this.ydbConnectionState = new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings());
-    }
-
-    public YdbConnection(YdbConnectionState ydbConnectionState) {
+    public YdbConnection(YdbContext ydbContext, YdbConnectionState ydbConnectionState) {
+        this.ydbContext = ydbContext;
         this.ydbConnectionState = ydbConnectionState;
     }
 
@@ -121,7 +117,7 @@ public class YdbConnection implements Connection {
 
     @Override
     public YdbStatement createStatement(String sql) {
-        YdbQuery query = YdbSqlParser.parse(sql);
+        YdbQuery query = ydbContext.findOrParseYdbQuery(sql);
 
         return switch (query.type()) {
             case DML -> new YdbDMLStatement(query, this);
