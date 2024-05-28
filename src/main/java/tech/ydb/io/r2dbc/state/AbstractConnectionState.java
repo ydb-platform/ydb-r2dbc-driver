@@ -57,4 +57,13 @@ public abstract class AbstractConnectionState implements YdbConnectionState {
 
         return settings;
     }
+
+    protected  <T extends RequestSettings<?>> T withDeadlineTimeout(T settings) {
+        if (!ydbContext.getDeadlineTimeout().isZero() && !ydbContext.getDeadlineTimeout().isNegative()) {
+            settings.setOperationTimeout(ydbContext.getDeadlineTimeout());
+            settings.setTimeout(ydbContext.getDeadlineTimeout().plusSeconds(1));
+        }
+
+        return settings;
+    }
 }

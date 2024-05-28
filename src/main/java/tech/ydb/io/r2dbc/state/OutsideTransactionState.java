@@ -48,7 +48,7 @@ import tech.ydb.table.settings.KeepAliveSessionSettings;
 public class OutsideTransactionState extends AbstractConnectionState implements YdbConnectionState {
 
     public OutsideTransactionState(YdbContext ydbContext, YdbTxSettings ydbTxSettings) {
-        super(ydbContext, ydbTxSettings, ydbContext.getDefaultTimeout());
+        super(ydbContext, ydbTxSettings, ydbContext.getStatementTimeout());
     }
 
     public OutsideTransactionState(YdbContext ydbContext, YdbTxSettings ydbTxSettings, Duration statementTimeout) {
@@ -74,7 +74,10 @@ public class OutsideTransactionState extends AbstractConnectionState implements 
                                 session.close();
                             }
 
-                            return new NextStateResult<>(ResultExtractor.extract(dataQueryResult, operationTypes),
+                            return new NextStateResult<>(ResultExtractor.extract(
+                                    dataQueryResult,
+                                    operationTypes,
+                                    ydbContext.getOperationsConfig().getFailOnTruncatedResult()),
                                     nextState);
                         })
         );
@@ -96,7 +99,7 @@ public class OutsideTransactionState extends AbstractConnectionState implements 
 
         return monoWithSession(session -> Mono.fromFuture(session.beginTransaction(
                         ydbTxSettings.getMode(),
-                        withStatementTimeout(new BeginTxSettings())))
+                        withDeadlineTimeout(new BeginTxSettings())))
                 .map(Result::getValue)
                 .map(transaction ->
                         new InsideTransactionState(ydbContext,

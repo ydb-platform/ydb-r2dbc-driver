@@ -28,7 +28,8 @@ import io.r2dbc.spi.RowMetadata;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.annotation.Nullable;
+import tech.ydb.core.Status;
+import tech.ydb.core.UnexpectedResultException;
 import tech.ydb.table.result.ResultSetReader;
 import tech.ydb.table.values.Value;
 
@@ -48,7 +49,7 @@ public class YdbResult implements Result {
         this.rowsUpdated = rowsUpdated;
     }
 
-    public YdbResult(ResultSetReader resultSetReader) {
+    public YdbResult(ResultSetReader resultSetReader, boolean failOnTruncated) {
         this.rowsUpdated = DEFAULT_SELECT_ROWS_UPDATED;
         this.segments = Flux.generate(
                 YdbRowMetadataState::new,
@@ -57,8 +58,12 @@ public class YdbResult implements Result {
                         sink.complete();
                         return state;
                     }
+                    if (failOnTruncated && resultSetReader.isTruncated()) {
+                        sink.error(new UnexpectedResultException("Result is truncated", Status.SUCCESS));
+                        return state;
+                    }
                     YdbRowMetadataState currentState = state;
-                    if (!state.isInitialized()) {
+                    if (state.isNotInitialized()) {
                         currentState = new YdbRowMetadataState(getYdbRowMetadata(resultSetReader));
                     }
                     List<Value<?>> values = new ArrayList<>(resultSetReader.getColumnCount());
@@ -120,12 +125,15 @@ public class YdbResult implements Result {
             this.ydbRowMetadata = ydbRowMetadata;
         }
 
-        public boolean isInitialized() {
-            return ydbRowMetadata != null;
+        public boolean isNotInitialized() {
+            return ydbRowMetadata == null;
         }
 
-        @Nullable
         public YdbRowMetadata getYdbRowMetadata() {
+            if (ydbRowMetadata == null) {
+                throw new IllegalStateException("State in not initialized");
+            }
+
             return ydbRowMetadata;
         }
     }

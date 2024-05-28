@@ -28,6 +28,7 @@ import tech.ydb.core.Result;
 import tech.ydb.core.Status;
 import tech.ydb.core.StatusCode;
 import tech.ydb.core.UnexpectedResultException;
+import tech.ydb.io.r2dbc.OperationsConfig;
 import tech.ydb.io.r2dbc.YdbContext;
 import tech.ydb.io.r2dbc.settings.YdbTxSettings;
 import tech.ydb.io.r2dbc.query.OperationType;
@@ -35,7 +36,7 @@ import tech.ydb.io.r2dbc.result.YdbResult;
 import tech.ydb.proto.ValueProtos;
 import tech.ydb.proto.table.YdbTable;
 import tech.ydb.table.Session;
-import tech.ydb.table.TableClient;
+import tech.ydb.table.impl.PooledTableClient;
 import tech.ydb.table.query.DataQueryResult;
 import tech.ydb.table.query.Params;
 import tech.ydb.table.transaction.Transaction;
@@ -52,7 +53,7 @@ public class OutsideTransactionStateUnitTest {
 
     @Test
     public void executeDataQueryTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
         Session session = Mockito.mock(Session.class);
         Mockito.when(session.executeDataQuery(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(
                 Result.success(new DataQueryResult(
@@ -66,7 +67,7 @@ public class OutsideTransactionStateUnitTest {
         ));
         Mockito.when(tableClient.createSession(any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
-        YdbContext ydbContext = new YdbContext(tableClient);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
         Params params = Mockito.mock(Params.class);
 
@@ -86,14 +87,14 @@ public class OutsideTransactionStateUnitTest {
                 })
                 .verifyComplete();
 
-        Mockito.verify(tableClient).createSession(ydbContext.getCreateSessionTimeout());
+        Mockito.verify(tableClient).createSession(any());
         Mockito.verify(session).executeDataQuery(eq(TEST_QUERY), any(), eq(params), any());
         Mockito.verify(session).close();
     }
 
     @Test
     public void executeDataQueryWithTxIdTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
         Session session = Mockito.mock(Session.class);
         Mockito.when(session.executeDataQuery(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(
                 Result.success(new DataQueryResult(
@@ -110,7 +111,7 @@ public class OutsideTransactionStateUnitTest {
         ));
         Mockito.when(tableClient.createSession(any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
-        YdbContext ydbContext = new YdbContext(tableClient);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
         Params params = Mockito.mock(Params.class);
 
@@ -131,14 +132,14 @@ public class OutsideTransactionStateUnitTest {
                 })
                 .verifyComplete();
 
-        Mockito.verify(tableClient).createSession(ydbContext.getCreateSessionTimeout());
+        Mockito.verify(tableClient).createSession(any());
         Mockito.verify(session).executeDataQuery(eq(TEST_QUERY), any(), eq(params), any());
         Mockito.verify(session, Mockito.never()).close();
     }
 
     @Test
     public void executeDataQueryFailTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
         Session session = Mockito.mock(Session.class);
         Mockito.when(session.executeDataQuery(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(
                 Result.success(new DataQueryResult(
@@ -152,7 +153,7 @@ public class OutsideTransactionStateUnitTest {
         ));
         Mockito.when(tableClient.createSession(any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
-        YdbContext ydbContext = new YdbContext(tableClient);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
         Params params = Mockito.mock(Params.class);
 
@@ -163,21 +164,21 @@ public class OutsideTransactionStateUnitTest {
                 .thenCancel()
                 .verify();
 
-        Mockito.verify(tableClient).createSession(ydbContext.getCreateSessionTimeout());
+        Mockito.verify(tableClient).createSession(any());
         Mockito.verify(session).executeDataQuery(eq(TEST_QUERY), any(), eq(params), any());
         Mockito.verify(session).close();
     }
 
     @Test
     public void executeDataQueryCancelTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
         Session session = Mockito.mock(Session.class);
         Mockito.when(session.executeDataQuery(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(
                 Result.fail(Status.of(StatusCode.ABORTED))
         ));
         Mockito.when(tableClient.createSession(any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
-        YdbContext ydbContext = new YdbContext(tableClient);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
         Params params = Mockito.mock(Params.class);
 
@@ -187,20 +188,20 @@ public class OutsideTransactionStateUnitTest {
                 .as(StepVerifier::create)
                 .verifyError(UnexpectedResultException.class);
 
-        Mockito.verify(tableClient).createSession(ydbContext.getCreateSessionTimeout());
+        Mockito.verify(tableClient).createSession(any());
         Mockito.verify(session).executeDataQuery(eq(TEST_QUERY), any(), eq(params), any());
         Mockito.verify(session).close();
     }
 
     @Test
     public void executeSchemeQueryTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
         Session session = Mockito.mock(Session.class);
         Mockito.when(session.executeSchemeQuery(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Status.SUCCESS));
         Mockito.when(tableClient.createSession(any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
-        YdbContext ydbContext = new YdbContext(tableClient);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
 
         OutsideTransactionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
@@ -210,20 +211,20 @@ public class OutsideTransactionStateUnitTest {
                 .as(StepVerifier::create)
                 .expectNext(0L)
                 .verifyComplete();
-        Mockito.verify(tableClient).createSession(ydbContext.getCreateSessionTimeout());
+        Mockito.verify(tableClient).createSession(any());
         Mockito.verify(session).executeSchemeQuery(eq(TEST_QUERY), any());
         Mockito.verify(session).close();
     }
 
     @Test
     public void executeSchemeQueryFailTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
         Session session = Mockito.mock(Session.class);
         Mockito.when(session.executeSchemeQuery(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Status.of(StatusCode.ABORTED)));
         Mockito.when(tableClient.createSession(any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
-        YdbContext ydbContext = new YdbContext(tableClient);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
 
         OutsideTransactionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
@@ -233,14 +234,14 @@ public class OutsideTransactionStateUnitTest {
                 .as(StepVerifier::create)
                 .verifyError(UnexpectedResultException.class);
 
-        Mockito.verify(tableClient).createSession(ydbContext.getCreateSessionTimeout());
+        Mockito.verify(tableClient).createSession(any());
         Mockito.verify(session).executeSchemeQuery(eq(TEST_QUERY), any());
         Mockito.verify(session).close();
     }
 
     @Test
     public void beginTransactionTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
         Session session = Mockito.mock(Session.class);
         Transaction transaction = Mockito.mock(Transaction.class);
         Mockito.when(transaction.getId()).thenReturn(TEST_TX_ID);
@@ -248,7 +249,7 @@ public class OutsideTransactionStateUnitTest {
                 .thenReturn(CompletableFuture.completedFuture(Result.success(transaction)));
         Mockito.when(tableClient.createSession(any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
-        YdbContext ydbContext = new YdbContext(tableClient);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
         Transaction.Mode mode = Mockito.mock(Transaction.Mode.class);
         Mockito.when(ydbTxSettings.getMode()).thenReturn(mode);
@@ -260,14 +261,14 @@ public class OutsideTransactionStateUnitTest {
                 .expectNext(new InsideTransactionState(ydbContext, TEST_TX_ID, session, ydbTxSettings))
                 .verifyComplete();
 
-        Mockito.verify(tableClient).createSession(ydbContext.getCreateSessionTimeout());
+        Mockito.verify(tableClient).createSession(any());
         Mockito.verify(session).beginTransaction(eq(mode), any());
         Mockito.verify(session, Mockito.never()).close();
     }
 
     @Test
     public void beginTransactionFailTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
         Session session = Mockito.mock(Session.class);
         Transaction transaction = Mockito.mock(Transaction.class);
         Mockito.when(transaction.getId()).thenReturn(TEST_TX_ID);
@@ -275,7 +276,7 @@ public class OutsideTransactionStateUnitTest {
                 .thenReturn(CompletableFuture.completedFuture(Result.fail(Status.of(StatusCode.ABORTED))));
         Mockito.when(tableClient.createSession(any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
-        YdbContext ydbContext = new YdbContext(tableClient);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
         Transaction.Mode mode = Mockito.mock(Transaction.Mode.class);
         Mockito.when(ydbTxSettings.getMode()).thenReturn(mode);
@@ -286,15 +287,15 @@ public class OutsideTransactionStateUnitTest {
                 .as(StepVerifier::create)
                 .verifyError(UnexpectedResultException.class);
 
-        Mockito.verify(tableClient).createSession(ydbContext.getCreateSessionTimeout());
+        Mockito.verify(tableClient).createSession(any());
         Mockito.verify(session).beginTransaction(eq(mode), any());
         Mockito.verify(session).close();
     }
 
     @Test
     public void commitTransactionTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
-        YdbContext ydbContext = new YdbContext(tableClient);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
 
         OutsideTransactionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
@@ -309,8 +310,8 @@ public class OutsideTransactionStateUnitTest {
 
     @Test
     public void rollbackTransactionTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
-        YdbContext ydbContext = new YdbContext(tableClient);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
 
         OutsideTransactionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
@@ -325,8 +326,8 @@ public class OutsideTransactionStateUnitTest {
 
     @Test
     public void setAutoCommitTrueTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
-        YdbContext ydbContext = new YdbContext(tableClient);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = YdbTxSettings.defaultSettings();
 
         OutsideTransactionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
@@ -342,8 +343,8 @@ public class OutsideTransactionStateUnitTest {
 
     @Test
     public void setAutoCommitFalseTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
-        YdbContext ydbContext = new YdbContext(tableClient);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
 
         OutsideTransactionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);

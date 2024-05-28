@@ -18,8 +18,9 @@ package tech.ydb.io.r2dbc;
 
 import io.r2dbc.spi.ConnectionFactoryOptions;
 import io.r2dbc.spi.Option;
+
+import java.util.Optional;
 import java.util.function.Consumer;
-import reactor.util.annotation.Nullable;
 
 /**
  * @author Kirill Kurdyukov
@@ -32,13 +33,16 @@ final class OptionExtractor {
         this.connectionFactoryOptions = connectionFactoryOptions;
     }
 
-    @Nullable
-    <T> T extract(Option<T> option) {
+    static OptionExtractor empty() {
+        return new OptionExtractor(ConnectionFactoryOptions.builder().build());
+    }
+
+    <T> Optional<T> extract(Option<T> option) {
         if (connectionFactoryOptions.hasOption(option)) {
-            return extractRequired(option);
+            return Optional.of(extractRequired(option));
         }
 
-        return null;
+        return Optional.empty();
     }
 
     <T> T extractOrDefault(Option<T> option, T defaultValue) {

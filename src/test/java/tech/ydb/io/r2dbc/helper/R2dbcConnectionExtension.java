@@ -28,10 +28,12 @@ import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import tech.ydb.io.r2dbc.OperationsConfig;
 import tech.ydb.io.r2dbc.YdbConnection;
 import tech.ydb.io.r2dbc.YdbContext;
 import tech.ydb.io.r2dbc.state.OutsideTransactionState;
-import tech.ydb.table.TableClient;
+import tech.ydb.table.impl.PooledTableClient;
+import tech.ydb.table.rpc.grpc.GrpcTableRpc;
 import tech.ydb.test.integration.YdbHelperFactory;
 import tech.ydb.test.junit5.YdbHelperExtension;
 
@@ -46,7 +48,10 @@ public class R2dbcConnectionExtension implements ExecutionCondition,
     private final YdbContext ydbContext;
 
     public R2dbcConnectionExtension(YdbHelperExtension ydb) {
-        ydbContext = new YdbContext(TableClient.newClient(ydb.createTransport()).build());
+        PooledTableClient client = PooledTableClient.newClient(
+                GrpcTableRpc.useTransport(ydb.createTransport()))
+                .build();
+        this.ydbContext = new YdbContext(client, OperationsConfig.defaultConfig());
     }
 
     private void register(ExtensionContext ctx) {

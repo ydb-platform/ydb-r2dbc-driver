@@ -38,7 +38,7 @@ import tech.ydb.io.r2dbc.state.YdbConnectionState;
 import tech.ydb.proto.ValueProtos;
 import tech.ydb.proto.table.YdbTable;
 import tech.ydb.table.Session;
-import tech.ydb.table.TableClient;
+import tech.ydb.table.impl.PooledTableClient;
 import tech.ydb.table.query.DataQueryResult;
 import tech.ydb.table.query.Params;
 import tech.ydb.table.transaction.Transaction;
@@ -53,8 +53,8 @@ import static org.mockito.Mockito.when;
  * @author Egor Kuleshov
  */
 public class YdbConnectionOutsideTransactionUnitTest {
-    private final TableClient client = mock(TableClient.class);
-    private final YdbContext ydbContext = new YdbContext(client);
+    private final PooledTableClient client = mock(PooledTableClient.class);
+    private final YdbContext ydbContext = new YdbContext(client, OperationsConfig.defaultConfig());
 
     @Test
     public void executeSchemeQueryTest() {
