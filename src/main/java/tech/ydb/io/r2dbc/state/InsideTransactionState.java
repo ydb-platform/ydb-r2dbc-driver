@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 
 import io.r2dbc.spi.IsolationLevel;
+import io.r2dbc.spi.ValidationDepth;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.YdbContext;
@@ -32,6 +33,7 @@ import tech.ydb.table.Session;
 import tech.ydb.table.query.Params;
 import tech.ydb.table.settings.CommitTxSettings;
 import tech.ydb.table.settings.ExecuteDataQuerySettings;
+import tech.ydb.table.settings.KeepAliveSessionSettings;
 import tech.ydb.table.settings.RollbackTxSettings;
 import tech.ydb.table.transaction.TxControl;
 
@@ -126,6 +128,17 @@ public final class InsideTransactionState extends AbstractConnectionState implem
         }
 
         return Mono.just(this);
+    }
+
+    @Override
+    public Mono<Boolean> keepAlive(ValidationDepth depth) {
+        return switch (depth) {
+            case LOCAL -> Mono.just(true);
+            case REMOTE ->
+                    Mono.fromFuture(session.keepAlive(withStatementTimeout(new KeepAliveSessionSettings())))
+                            .flatMap(stateResult -> ResultExtractor.extract(stateResult)
+                                    .map(state -> Session.State.READY == state));
+        };
     }
 
     @Override

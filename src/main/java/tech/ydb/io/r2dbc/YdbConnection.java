@@ -196,7 +196,8 @@ public class YdbConnection implements Connection {
 
     @Override
     public Mono<Boolean> validate(ValidationDepth depth) {
-        return Mono.just(true);
+        return ydbConnectionState
+                .keepAlive(depth);
     }
 
     private void updateState(YdbConnectionState ydbConnectionState) {

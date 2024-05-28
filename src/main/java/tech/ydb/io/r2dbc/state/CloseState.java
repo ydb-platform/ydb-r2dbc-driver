@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.List;
 
 import io.r2dbc.spi.IsolationLevel;
+import io.r2dbc.spi.ValidationDepth;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.settings.YdbTxSettings;
@@ -68,6 +69,11 @@ public class CloseState implements YdbConnectionState {
     @Override
     public Mono<YdbConnectionState> setAutoCommit(boolean autoCommit) {
         return Mono.error(new IllegalStateException(CLOSED_STATE_MESSAGE));
+    }
+
+    @Override
+    public Mono<Boolean> keepAlive(ValidationDepth depth) {
+        return Mono.just(false);
     }
 
     @Override

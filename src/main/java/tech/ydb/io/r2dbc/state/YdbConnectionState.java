@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.List;
 
 import io.r2dbc.spi.IsolationLevel;
+import io.r2dbc.spi.ValidationDepth;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.ydb.io.r2dbc.settings.YdbTxSettings;
@@ -81,6 +82,14 @@ public interface YdbConnectionState {
      * @return new connection state
      */
     Mono<YdbConnectionState> setAutoCommit(boolean autoCommit);
+
+    /**
+     * Send keep alive check request.
+     *
+     * @param depth – the validation depth.
+     * @return a Publisher that indicates whether the validation was successful.
+     */
+    Mono<Boolean> keepAlive(ValidationDepth depth);
 
     /**
      * Set isolation level for next transactions.

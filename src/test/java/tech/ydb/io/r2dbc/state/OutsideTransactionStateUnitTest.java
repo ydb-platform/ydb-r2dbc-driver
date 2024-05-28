@@ -19,6 +19,7 @@ package tech.ydb.io.r2dbc.state;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import io.r2dbc.spi.ValidationDepth;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -353,5 +354,92 @@ public class OutsideTransactionStateUnitTest {
                 .verifyComplete();
 
         Mockito.verify(ydbTxSettings).setAutoCommit(false);
+    }
+
+    @Test
+    public void keepAliveLocalTest() {
+        TableClient tableClient = Mockito.mock(TableClient.class);
+        YdbContext ydbContext = new YdbContext(tableClient);
+        YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
+
+        OutsideTransactionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
+
+        state.keepAlive(ValidationDepth.LOCAL)
+                .as(StepVerifier::create)
+                .expectNext(true)
+                .verifyComplete();
+
+        Mockito.verify(tableClient, Mockito.never()).createSession(any());
+    }
+
+    @Test
+    public void keepAliveRemoteTrueTest() {
+        TableClient tableClient = Mockito.mock(TableClient.class);
+        Session session = Mockito.mock(Session.class);
+        Mockito.when(session.keepAlive(any()))
+                .thenReturn(CompletableFuture.completedFuture(Result.success(Session.State.READY)));
+        Mockito.when(tableClient.createSession(any()))
+                .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
+        YdbContext ydbContext = new YdbContext(tableClient);
+        YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
+
+        OutsideTransactionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
+
+        state.keepAlive(ValidationDepth.REMOTE)
+                .as(StepVerifier::create)
+                .expectNext(true)
+                .verifyComplete();
+
+
+        Mockito.verify(tableClient).createSession(ydbContext.getCreateSessionTimeout());
+        Mockito.verify(session).keepAlive(any());
+        Mockito.verify(session).close();
+    }
+
+    @Test
+    public void keepAliveRemoteFalseTest() {
+        TableClient tableClient = Mockito.mock(TableClient.class);
+        Session session = Mockito.mock(Session.class);
+        Mockito.when(session.keepAlive(any()))
+                .thenReturn(CompletableFuture.completedFuture(Result.success(Session.State.BUSY)));
+        Mockito.when(tableClient.createSession(any()))
+                .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
+        YdbContext ydbContext = new YdbContext(tableClient);
+        YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
+
+        OutsideTransactionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
+
+        state.keepAlive(ValidationDepth.REMOTE)
+                .as(StepVerifier::create)
+                .expectNext(false)
+                .verifyComplete();
+
+
+        Mockito.verify(tableClient).createSession(ydbContext.getCreateSessionTimeout());
+        Mockito.verify(session).keepAlive(any());
+        Mockito.verify(session).close();
+    }
+
+    @Test
+    public void keepAliveRemoteFailTest() {
+        TableClient tableClient = Mockito.mock(TableClient.class);
+        Session session = Mockito.mock(Session.class);
+        Mockito.when(session.keepAlive(any()))
+                .thenReturn(CompletableFuture.completedFuture(Result.fail(Status.of(StatusCode.ABORTED))));
+        Mockito.when(tableClient.createSession(any()))
+                .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
+        YdbContext ydbContext = new YdbContext(tableClient);
+        YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
+
+        OutsideTransactionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
+
+        state.keepAlive(ValidationDepth.REMOTE)
+                .as(StepVerifier::create)
+                .verifyError(UnexpectedResultException.class);
+
+
+        Mockito.verify(tableClient).createSession(ydbContext.getCreateSessionTimeout());
+        Mockito.verify(session).keepAlive(any());
+        Mockito.verify(session).close();
     }
 }

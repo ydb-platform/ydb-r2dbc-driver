@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import io.r2dbc.spi.IsolationLevel;
+import io.r2dbc.spi.ValidationDepth;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import reactor.test.StepVerifier;
@@ -315,6 +316,82 @@ public class InsideTransactionStateUnitTest {
 
         Mockito.verify(ydbContext, Mockito.never()).getSession();
         Mockito.verify(ydbTxSettings, Mockito.never()).setAutoCommit(false);
+        Mockito.verify(session, Mockito.never()).close();
+    }
+
+    @Test
+    public void keepAliveLocalTest() {
+        Session session = Mockito.mock(Session.class);
+        YdbContext ydbContext = Mockito.mock(YdbContext.class);
+        YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
+
+        InsideTransactionState state = new InsideTransactionState(ydbContext, TEST_TX_ID, session, ydbTxSettings);
+
+        state.keepAlive(ValidationDepth.LOCAL)
+                .as(StepVerifier::create)
+                .expectNext(true)
+                .verifyComplete();
+
+        Mockito.verify(ydbContext, Mockito.never()).getSession();
+        Mockito.verify(session, Mockito.never()).close();
+    }
+
+    @Test
+    public void keepAliveRemoteTrueTest() {
+        Session session = Mockito.mock(Session.class);
+        Mockito.when(session.keepAlive(any()))
+                .thenReturn(CompletableFuture.completedFuture(Result.success(Session.State.READY)));
+        YdbContext ydbContext = Mockito.mock(YdbContext.class);
+        YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
+
+        InsideTransactionState state = new InsideTransactionState(ydbContext, TEST_TX_ID, session, ydbTxSettings);
+
+        state.keepAlive(ValidationDepth.REMOTE)
+                .as(StepVerifier::create)
+                .expectNext(true)
+                .verifyComplete();
+
+        Mockito.verify(ydbContext, Mockito.never()).getSession();
+        Mockito.verify(session).keepAlive(any());
+        Mockito.verify(session, Mockito.never()).close();
+    }
+
+    @Test
+    public void keepAliveRemoteFalseTest() {
+        Session session = Mockito.mock(Session.class);
+        Mockito.when(session.keepAlive(any()))
+                .thenReturn(CompletableFuture.completedFuture(Result.success(Session.State.BUSY)));
+        YdbContext ydbContext = Mockito.mock(YdbContext.class);
+        YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
+
+        InsideTransactionState state = new InsideTransactionState(ydbContext, TEST_TX_ID, session, ydbTxSettings);
+
+        state.keepAlive(ValidationDepth.REMOTE)
+                .as(StepVerifier::create)
+                .expectNext(false)
+                .verifyComplete();
+
+        Mockito.verify(ydbContext, Mockito.never()).getSession();
+        Mockito.verify(session).keepAlive(any());
+        Mockito.verify(session, Mockito.never()).close();
+    }
+
+    @Test
+    public void keepAliveFailTest() {
+        Session session = Mockito.mock(Session.class);
+        Mockito.when(session.keepAlive(any()))
+                .thenReturn(CompletableFuture.completedFuture(Result.fail(Status.of(StatusCode.ABORTED))));
+        YdbContext ydbContext = Mockito.mock(YdbContext.class);
+        YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
+
+        InsideTransactionState state = new InsideTransactionState(ydbContext, TEST_TX_ID, session, ydbTxSettings);
+
+        state.keepAlive(ValidationDepth.REMOTE)
+                .as(StepVerifier::create)
+                .verifyError(UnexpectedResultException.class);
+
+        Mockito.verify(ydbContext, Mockito.never()).getSession();
+        Mockito.verify(session).keepAlive(any());
         Mockito.verify(session, Mockito.never()).close();
     }
 
