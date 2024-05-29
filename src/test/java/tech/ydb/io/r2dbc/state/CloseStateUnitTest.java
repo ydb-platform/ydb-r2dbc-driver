@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.List;
 
 import io.r2dbc.spi.IsolationLevel;
+import io.r2dbc.spi.ValidationDepth;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -66,6 +67,22 @@ public class CloseStateUnitTest {
         state.setAutoCommit(false)
                 .as(StepVerifier::create)
                 .verifyError(IllegalStateException.class);
+    }
+
+    @Test
+    public void keepAliveLocalTest() {
+        state.keepAlive(ValidationDepth.LOCAL)
+                .as(StepVerifier::create)
+                .expectNext(false)
+                .verifyComplete();
+    }
+
+    @Test
+    public void keepAliveRemoteTest() {
+        state.keepAlive(ValidationDepth.REMOTE)
+                .as(StepVerifier::create)
+                .expectNext(false)
+                .verifyComplete();
     }
 
     @Test

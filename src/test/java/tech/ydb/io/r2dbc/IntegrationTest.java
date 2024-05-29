@@ -16,6 +16,7 @@
 
 package tech.ydb.io.r2dbc;
 
+import io.r2dbc.spi.ValidationDepth;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +41,15 @@ public class IntegrationTest extends IntegrationBaseTest {
 
     @Test
     public void createAndDropTable() {
+    }
+
+    @Test
+    public void validationTest() {
+        r2dbc.connection()
+                .validate(ValidationDepth.REMOTE)
+                .as(StepVerifier::create)
+                .expectNext(true)
+                .verifyComplete();
     }
 
     @Test

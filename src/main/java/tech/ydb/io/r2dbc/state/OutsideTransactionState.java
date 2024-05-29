@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import io.r2dbc.spi.IsolationLevel;
+import io.r2dbc.spi.ValidationDepth;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import tech.ydb.core.Result;
@@ -36,6 +37,7 @@ import tech.ydb.table.query.Params;
 import tech.ydb.table.settings.BeginTxSettings;
 import tech.ydb.table.settings.ExecuteDataQuerySettings;
 import tech.ydb.table.settings.ExecuteSchemeQuerySettings;
+import tech.ydb.table.settings.KeepAliveSessionSettings;
 
 /**
  * Implementation of the connection state without an open transaction.
@@ -120,6 +122,18 @@ public class OutsideTransactionState extends AbstractConnectionState implements 
         ydbTxSettings.setAutoCommit(autoCommit);
 
         return Mono.just(this);
+    }
+
+    @Override
+    public Mono<Boolean> keepAlive(ValidationDepth depth) {
+        return switch (depth) {
+            case LOCAL -> Mono.just(true);
+            case REMOTE -> monoWithSession(session ->
+                    Mono.fromFuture(session.keepAlive(withStatementTimeout(new KeepAliveSessionSettings())))
+                            .flatMap(stateResult -> ResultExtractor.extract(stateResult)
+                                    .map(state -> Session.State.READY == state))
+                            .doOnSuccess(unused -> session.close()));
+        };
     }
 
     @Override
