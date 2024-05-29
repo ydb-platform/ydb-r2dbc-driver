@@ -144,7 +144,7 @@ public final class InsideTransactionState extends AbstractConnectionState implem
         return switch (depth) {
             case LOCAL -> Mono.just(true);
             case REMOTE ->
-                    Mono.fromFuture(session.keepAlive(withStatementTimeout(new KeepAliveSessionSettings())))
+                    Mono.fromFuture(session.keepAlive(withDeadlineTimeout(new KeepAliveSessionSettings())))
                             .flatMap(stateResult -> ResultExtractor.extract(stateResult)
                                     .map(state -> Session.State.READY == state));
         };

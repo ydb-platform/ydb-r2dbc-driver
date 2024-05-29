@@ -132,7 +132,7 @@ public class OutsideTransactionState extends AbstractConnectionState implements 
         return switch (depth) {
             case LOCAL -> Mono.just(true);
             case REMOTE -> monoWithSession(session ->
-                    Mono.fromFuture(session.keepAlive(withStatementTimeout(new KeepAliveSessionSettings())))
+                    Mono.fromFuture(session.keepAlive(withDeadlineTimeout(new KeepAliveSessionSettings())))
                             .flatMap(stateResult -> ResultExtractor.extract(stateResult)
                                     .map(state -> Session.State.READY == state))
                             .doOnSuccess(unused -> session.close()));
