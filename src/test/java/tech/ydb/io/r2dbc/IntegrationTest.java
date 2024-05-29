@@ -75,6 +75,28 @@ public class IntegrationTest extends IntegrationBaseTest {
     }
 
     @Test
+    public void batchSelectTable() {
+        upsertData(r2dbc.connection())
+                .flatMap(YdbResult::getRowsUpdated)
+                .as(StepVerifier::create)
+                .expectNext(1L)
+                .expectNext(1L)
+                .verifyComplete();
+
+        r2dbc.connection().createBatch()
+                .add("select * from t1 order by id asc;")
+                .add("select * from t1 order by id desc;")
+                .execute()
+                .concatMap(ydbResult -> ydbResult.map((row, rowMetadata) -> row.get("id")))
+                .as(StepVerifier::create)
+                .expectNext(123)
+                .expectNext(124)
+                .expectNext(124)
+                .expectNext(123)
+                .verifyComplete();
+    }
+
+    @Test
     public void doubleSelectAndUpsertTable() {
         upsertData(r2dbc.connection())
                 .flatMap(YdbResult::getRowsUpdated)

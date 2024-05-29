@@ -17,10 +17,11 @@
 package tech.ydb.io.r2dbc;
 
 import io.r2dbc.spi.Batch;
-import io.r2dbc.spi.Result;
-import org.reactivestreams.Publisher;
-import reactor.core.publisher.Mono;
-import tech.ydb.io.r2dbc.state.YdbConnectionState;
+import reactor.core.publisher.Flux;
+import tech.ydb.io.r2dbc.query.QueryType;
+import tech.ydb.io.r2dbc.query.YdbQuery;
+import tech.ydb.io.r2dbc.result.YdbResult;
+import tech.ydb.io.r2dbc.statement.YdbDMLStatement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,23 +30,34 @@ import java.util.List;
  * @author Kirill Kurdyukov
  */
 public final class YdbBatch implements Batch {
-
-    private final YdbConnectionState state;
+    private final YdbConnection ydbConnection;
+    private final YdbContext ydbContext;
     private final List<String> statements = new ArrayList<>();
 
-    public YdbBatch(YdbConnectionState state) {
-        this.state = state;
+    public YdbBatch(YdbConnection ydbConnection, YdbContext ydbContext) {
+        this.ydbConnection = ydbConnection;
+        this.ydbContext = ydbContext;
     }
 
     @Override
-    public Batch add(String sql) {
+    public YdbBatch add(String sql) {
         statements.add(sql);
 
         return this;
     }
 
     @Override
-    public Publisher<? extends Result> execute() {
-        return Mono.empty();
+    public Flux<YdbResult> execute() {
+        YdbQuery query = ydbContext.findOrParseYdbQuery(String.join(";\n", this.statements));
+
+        if (query.type() != QueryType.DML) {
+            return Flux.error(new IllegalArgumentException("YDB support only DML batch queries"));
+        }
+
+        if (!query.getIndexArgNames().isEmpty()) {
+            return Flux.error(new IllegalArgumentException("YDB does not support parametrized batch queries"));
+        }
+
+        return new YdbDMLStatement(query, ydbConnection).execute();
     }
 }
