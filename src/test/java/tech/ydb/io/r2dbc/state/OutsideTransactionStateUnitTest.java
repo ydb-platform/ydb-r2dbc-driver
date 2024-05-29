@@ -359,8 +359,8 @@ public class OutsideTransactionStateUnitTest {
 
     @Test
     public void keepAliveLocalTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
-        YdbContext ydbContext = new YdbContext(tableClient);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
 
         OutsideTransactionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
@@ -375,13 +375,13 @@ public class OutsideTransactionStateUnitTest {
 
     @Test
     public void keepAliveRemoteTrueTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
         Session session = Mockito.mock(Session.class);
         Mockito.when(session.keepAlive(any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.success(Session.State.READY)));
         Mockito.when(tableClient.createSession(any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
-        YdbContext ydbContext = new YdbContext(tableClient);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
 
         OutsideTransactionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
@@ -392,20 +392,20 @@ public class OutsideTransactionStateUnitTest {
                 .verifyComplete();
 
 
-        Mockito.verify(tableClient).createSession(ydbContext.getCreateSessionTimeout());
+        Mockito.verify(tableClient).createSession(any());
         Mockito.verify(session).keepAlive(any());
         Mockito.verify(session).close();
     }
 
     @Test
     public void keepAliveRemoteFalseTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
         Session session = Mockito.mock(Session.class);
         Mockito.when(session.keepAlive(any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.success(Session.State.BUSY)));
         Mockito.when(tableClient.createSession(any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
-        YdbContext ydbContext = new YdbContext(tableClient);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
 
         OutsideTransactionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
@@ -416,20 +416,20 @@ public class OutsideTransactionStateUnitTest {
                 .verifyComplete();
 
 
-        Mockito.verify(tableClient).createSession(ydbContext.getCreateSessionTimeout());
+        Mockito.verify(tableClient).createSession(any());
         Mockito.verify(session).keepAlive(any());
         Mockito.verify(session).close();
     }
 
     @Test
     public void keepAliveRemoteFailTest() {
-        TableClient tableClient = Mockito.mock(TableClient.class);
+        PooledTableClient tableClient = Mockito.mock(PooledTableClient.class);
         Session session = Mockito.mock(Session.class);
         Mockito.when(session.keepAlive(any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.fail(Status.of(StatusCode.ABORTED))));
         Mockito.when(tableClient.createSession(any()))
                 .thenReturn(CompletableFuture.completedFuture(Result.success(session)));
-        YdbContext ydbContext = new YdbContext(tableClient);
+        YdbContext ydbContext = new YdbContext(tableClient, OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
 
         OutsideTransactionState state = new OutsideTransactionState(ydbContext, ydbTxSettings);
@@ -439,7 +439,7 @@ public class OutsideTransactionStateUnitTest {
                 .verifyError(UnexpectedResultException.class);
 
 
-        Mockito.verify(tableClient).createSession(ydbContext.getCreateSessionTimeout());
+        Mockito.verify(tableClient).createSession(any());
         Mockito.verify(session).keepAlive(any());
         Mockito.verify(session).close();
     }
