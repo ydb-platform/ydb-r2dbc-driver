@@ -26,6 +26,8 @@ import reactor.test.StepVerifier;
 import tech.ydb.io.r2dbc.query.QueryType;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 import tech.ydb.io.r2dbc.result.YdbResult;
+import tech.ydb.io.r2dbc.statement.YdbDDLStatement;
+import tech.ydb.io.r2dbc.statement.YdbDMLStatement;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -38,9 +40,15 @@ public class YdbBatchUnitTest {
     public void singleTest() {
         YdbConnection ydbConnection = Mockito.mock(YdbConnection.class);
         YdbContext ydbContext = Mockito.mock(YdbContext.class);
+        YdbQuery query = new YdbQuery("test", List.of(), QueryType.DML);
+
+        Mockito.when(ydbConnection.createStatement(any(YdbQuery.class)))
+                .thenReturn(new YdbDMLStatement(query, ydbConnection));
         YdbResult ydbResult = Mockito.mock(YdbResult.class);
-        Mockito.when(ydbResult.getRowsUpdated()).thenReturn(Mono.just(-1L));
-        Mockito.when(ydbContext.findOrParseYdbQuery(Mockito.any())).thenReturn(new YdbQuery("test", List.of(), QueryType.DML));
+        Mockito.when(ydbResult.getRowsUpdated())
+                .thenReturn(Mono.just(-1L));
+        Mockito.when(ydbContext.findOrParseYdbQuery(Mockito.any()))
+                .thenReturn(query);
         Mockito.when(ydbConnection.executeDataQuery(Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(Flux.just(ydbResult));
 
@@ -62,9 +70,15 @@ public class YdbBatchUnitTest {
     public void doubleTest() {
         YdbConnection ydbConnection = Mockito.mock(YdbConnection.class);
         YdbContext ydbContext = Mockito.mock(YdbContext.class);
+        YdbQuery query = new YdbQuery("test1;\ntest2", List.of(), QueryType.DML);
+
+        Mockito.when(ydbConnection.createStatement(any(YdbQuery.class)))
+                .thenReturn(new YdbDMLStatement(query, ydbConnection));
         YdbResult ydbResult = Mockito.mock(YdbResult.class);
-        Mockito.when(ydbResult.getRowsUpdated()).thenReturn(Mono.just(-1L));
-        Mockito.when(ydbContext.findOrParseYdbQuery(Mockito.any())).thenReturn(new YdbQuery("test1;\ntest2", List.of(), QueryType.DML));
+        Mockito.when(ydbResult.getRowsUpdated())
+                .thenReturn(Mono.just(-1L));
+        Mockito.when(ydbContext.findOrParseYdbQuery(Mockito.any()))
+                .thenReturn(query);
         Mockito.when(ydbConnection.executeDataQuery(Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(Flux.just(ydbResult));
 
@@ -83,10 +97,18 @@ public class YdbBatchUnitTest {
     }
 
     @Test
-    public void DDLExceptionTest() {
+    public void schemeTest() {
         YdbConnection ydbConnection = Mockito.mock(YdbConnection.class);
         YdbContext ydbContext = Mockito.mock(YdbContext.class);
-        Mockito.when(ydbContext.findOrParseYdbQuery(Mockito.any())).thenReturn(new YdbQuery("test1;\ntest2", List.of(), QueryType.DDL));
+        YdbQuery query = new YdbQuery("test1;\ntest2", List.of(), QueryType.DDL);
+        Mockito.when(ydbConnection.createStatement(any(YdbQuery.class)))
+                .thenReturn(new YdbDDLStatement(query, ydbConnection));
+
+        Mockito.when(ydbContext.findOrParseYdbQuery(Mockito.any())).thenReturn(query);
+        YdbResult ydbResult = Mockito.mock(YdbResult.class);
+        Mockito.when(ydbResult.getRowsUpdated()).thenReturn(Mono.just(-1L));
+        Mockito.when(ydbConnection.executeSchemeQuery(Mockito.any()))
+                .thenReturn(Flux.just(ydbResult));
 
         YdbBatch batch = new YdbBatch(ydbConnection, ydbContext);
 
@@ -95,7 +117,8 @@ public class YdbBatchUnitTest {
         batch.execute()
                 .flatMap(YdbResult::getRowsUpdated)
                 .as(StepVerifier::create)
-                .verifyError(IllegalArgumentException.class);
+                .expectNext(-1L)
+                .verifyComplete();
 
         Mockito.verify(ydbContext).findOrParseYdbQuery("test1;\ntest2");
         Mockito.verify(ydbConnection, Mockito.never()).executeDataQuery(any(), any(), any());
@@ -105,7 +128,8 @@ public class YdbBatchUnitTest {
     public void parametersExceptionTest() {
         YdbConnection ydbConnection = Mockito.mock(YdbConnection.class);
         YdbContext ydbContext = Mockito.mock(YdbContext.class);
-        Mockito.when(ydbContext.findOrParseYdbQuery(Mockito.any())).thenReturn(new YdbQuery("test1;\ntest2", List.of("test"), QueryType.DML));
+        Mockito.when(ydbContext.findOrParseYdbQuery(Mockito.any()))
+                .thenReturn(new YdbQuery("test1;\ntest2", List.of("test"), QueryType.DML));
 
         YdbBatch batch = new YdbBatch(ydbConnection, ydbContext);
 

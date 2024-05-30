@@ -18,10 +18,8 @@ package tech.ydb.io.r2dbc;
 
 import io.r2dbc.spi.Batch;
 import reactor.core.publisher.Flux;
-import tech.ydb.io.r2dbc.query.QueryType;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 import tech.ydb.io.r2dbc.result.YdbResult;
-import tech.ydb.io.r2dbc.statement.YdbDMLStatement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,14 +48,10 @@ public final class YdbBatch implements Batch {
     public Flux<YdbResult> execute() {
         YdbQuery query = ydbContext.findOrParseYdbQuery(String.join(";\n", this.statements));
 
-        if (query.type() != QueryType.DML) {
-            return Flux.error(new IllegalArgumentException("YDB support only DML batch queries"));
-        }
-
         if (!query.getIndexArgNames().isEmpty()) {
             return Flux.error(new IllegalArgumentException("YDB does not support parametrized batch queries"));
         }
 
-        return new YdbDMLStatement(query, ydbConnection).execute();
+        return ydbConnection.createStatement(query).execute();
     }
 }

@@ -25,8 +25,8 @@ import tech.ydb.io.r2dbc.YdbConnection;
  * @author Egor Kuleshov
  */
 public class YdbDMLStatement extends YdbStatement {
-    public YdbDMLStatement(YdbQuery query, YdbConnection queryExecutor) {
-        super(query, queryExecutor);
+    public YdbDMLStatement(YdbQuery query, YdbConnection connection) {
+        super(query, connection);
     }
 
     @Override
