@@ -37,7 +37,9 @@ public final class YdbConnectionFactory implements ConnectionFactory {
         return Mono.just(
                 new YdbConnection(
                         ydbContext,
-                        new OutsideTransactionState(ydbContext, ydbContext.getDefaultYdbTxSettings())
+                        new OutsideTransactionState(ydbContext,
+                                ydbContext.getDefaultYdbTxSettings(),
+                                ydbContext.getStatementTimeout())
                 )
         );
     }

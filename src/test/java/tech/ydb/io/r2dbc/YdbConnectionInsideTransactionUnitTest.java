@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import reactor.test.StepVerifier;
@@ -53,6 +54,11 @@ public class YdbConnectionInsideTransactionUnitTest {
     private static final YdbContext ydbContext = mock(YdbContext.class);
     private static final String txId = "test_tx_id";
     private static final YdbTxSettings ydbTxSettings = YdbTxSettings.defaultSettings().withAutoCommit(false);
+
+    @BeforeEach
+    public void init() {
+        Mockito.when(ydbContext.getOperationsConfig()).thenReturn(OperationsConfig.defaultConfig());
+    }
 
     @Test
     public void executeSchemeQueryTest() {

@@ -16,15 +16,14 @@
 
 package tech.ydb.io.r2dbc;
 
-import java.time.Duration;
-
+import io.r2dbc.spi.ConnectionFactoryOptions;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import tech.ydb.io.r2dbc.options.OperationOptions;
 import tech.ydb.io.r2dbc.query.YdbQuery;
 import tech.ydb.io.r2dbc.query.YdbSqlParser;
-import tech.ydb.io.r2dbc.settings.YdbTxSettings;
-import tech.ydb.table.TableClient;
+import tech.ydb.table.impl.PooledTableClient;
 
 /**
  * @author Egor Kuleshov
@@ -39,15 +38,14 @@ public class YdbContextUnitTest {
                     .thenReturn(ydbQuery);
 
             YdbContext ydbContext = new YdbContext(
-                    Mockito.mock(TableClient.class),
-                    Mockito.mock(Duration.class),
-                    Mockito.mock(Duration.class),
-                    YdbTxSettings.defaultSettings(),
-                    1
+                    Mockito.mock(PooledTableClient.class),
+                    new OperationsConfig(new OptionExtractor(ConnectionFactoryOptions.builder()
+                            .option(OperationOptions.STATEMENT_CACHE_SIZE, 1)
+                            .build()))
             );
 
-            ydbContext.findOrParseYdbQuery("test");
-            ydbContext.findOrParseYdbQuery("test");
+            ydbContext.fetchYdbQuery("test");
+            ydbContext.fetchYdbQuery("test");
 
             parser.verify(() -> YdbSqlParser.parse("test"));
         }
@@ -60,15 +58,14 @@ public class YdbContextUnitTest {
                     .thenReturn(ydbQuery);
 
             YdbContext ydbContext = new YdbContext(
-                    Mockito.mock(TableClient.class),
-                    Mockito.mock(Duration.class),
-                    Mockito.mock(Duration.class),
-                    YdbTxSettings.defaultSettings(),
-                    0
+                    Mockito.mock(PooledTableClient.class),
+                    new OperationsConfig(new OptionExtractor(ConnectionFactoryOptions.builder()
+                            .option(OperationOptions.STATEMENT_CACHE_SIZE, 0)
+                            .build()))
             );
 
-            ydbContext.findOrParseYdbQuery("test");
-            ydbContext.findOrParseYdbQuery("test");
+            ydbContext.fetchYdbQuery("test");
+            ydbContext.fetchYdbQuery("test");
 
             parser.verify(() -> YdbSqlParser.parse("test"), Mockito.times(2));
         }
@@ -85,17 +82,16 @@ public class YdbContextUnitTest {
                     .thenReturn(ydbQuery2);
 
             YdbContext ydbContext = new YdbContext(
-                    Mockito.mock(TableClient.class),
-                    Mockito.mock(Duration.class),
-                    Mockito.mock(Duration.class),
-                    YdbTxSettings.defaultSettings(),
-                    1
+                    Mockito.mock(PooledTableClient.class),
+                    new OperationsConfig(new OptionExtractor(ConnectionFactoryOptions.builder()
+                            .option(OperationOptions.STATEMENT_CACHE_SIZE, 1)
+                            .build()))
             );
 
-            ydbContext.findOrParseYdbQuery("test");
-            ydbContext.findOrParseYdbQuery("test");
-            ydbContext.findOrParseYdbQuery("test2");
-            ydbContext.findOrParseYdbQuery("test2");
+            ydbContext.fetchYdbQuery("test");
+            ydbContext.fetchYdbQuery("test");
+            ydbContext.fetchYdbQuery("test2");
+            ydbContext.fetchYdbQuery("test2");
 
             parser.verify(() -> YdbSqlParser.parse("test"), Mockito.times(1));
             parser.verify(() -> YdbSqlParser.parse("test"), Mockito.times(1));

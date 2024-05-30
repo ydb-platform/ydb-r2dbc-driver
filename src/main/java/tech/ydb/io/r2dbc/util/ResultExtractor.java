@@ -53,7 +53,9 @@ public class ResultExtractor {
     }
 
     public static Flux<YdbResult> extract(Result<DataQueryResult> dataQueryResultResult,
-                                          List<OperationType> operationTypes) {
+                                          List<OperationType> operationTypes,
+                                          boolean failOnTruncated
+    ) {
         try {
             Mono<DataQueryResult> dataQueryResultMono =
                     ResultExtractor.extract(dataQueryResultResult);
@@ -62,7 +64,7 @@ public class ResultExtractor {
                 List<YdbResult> results = new ArrayList<>();
                 for (int opIndex = 0, resSetIndex = 0; opIndex < operationTypes.size(); opIndex++) {
                     results.add(switch (operationTypes.get(opIndex)) {
-                        case SELECT -> new YdbResult(result.getResultSet(resSetIndex++));
+                        case SELECT -> new YdbResult(result.getResultSet(resSetIndex++), failOnTruncated);
                         case UPDATE -> YdbResult.UPDATE_RESULT;
                         case SCHEME -> throw new IllegalStateException(
                                 "DDL operation not support in executeDataQuery"

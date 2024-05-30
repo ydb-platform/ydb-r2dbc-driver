@@ -62,6 +62,10 @@
             <artifactId>ydb-sdk-table</artifactId>
         </dependency>
         <dependency>
+            <groupId>tech.ydb.auth</groupId>
+            <artifactId>yc-auth-provider</artifactId>
+        </dependency>
+        <dependency>
             <groupId>tech.ydb.test</groupId>
             <artifactId>ydb-junit5-support</artifactId>
             <scope>test</scope>

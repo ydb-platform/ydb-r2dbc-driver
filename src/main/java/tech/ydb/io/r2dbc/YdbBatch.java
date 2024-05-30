@@ -46,7 +46,7 @@ public final class YdbBatch implements Batch {
 
     @Override
     public Flux<YdbResult> execute() {
-        YdbQuery query = ydbContext.findOrParseYdbQuery(String.join(";\n", this.statements));
+        YdbQuery query = ydbContext.fetchYdbQuery(String.join(";\n", this.statements));
 
         if (!query.getIndexArgNames().isEmpty()) {
             return Flux.error(new IllegalArgumentException("YDB does not support parametrized batch queries"));

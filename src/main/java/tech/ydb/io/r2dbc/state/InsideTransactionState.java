@@ -51,7 +51,7 @@ public final class InsideTransactionState extends AbstractConnectionState implem
     private final TxControl.TxId txControl;
 
     public InsideTransactionState(YdbContext ydbContext, String id, Session session, YdbTxSettings ydbTxSettings) {
-        super(ydbContext, ydbTxSettings, ydbContext.getDefaultTimeout());
+        super(ydbContext, ydbTxSettings, ydbContext.getStatementTimeout());
         this.id = id;
         this.session = session;
         this.ydbTxSettings = ydbTxSettings;
@@ -79,14 +79,23 @@ public final class InsideTransactionState extends AbstractConnectionState implem
                     String txId = dataQueryResult.getValue().getTxId();
                     YdbConnectionState nextState = this;
                     if (txId != null && !txId.isEmpty() && !txId.equals(this.id)) {
-                        nextState = new InsideTransactionState(ydbContext, txId, session, ydbTxSettings);
+                        nextState = new InsideTransactionState(
+                                ydbContext,
+                                txId,
+                                session,
+                                ydbTxSettings,
+                                statementTimeout
+                        );
                     }
                     if (dataQueryResult.getValue().getTxId() == null || dataQueryResult.getValue().getTxId().isEmpty()) {
                         nextState = new OutsideTransactionState(ydbContext, ydbTxSettings, statementTimeout);
                         session.close();
                     }
 
-                    return new NextStateResult<>(ResultExtractor.extract(dataQueryResult, operationTypes), nextState);
+                    return new NextStateResult<>(ResultExtractor.extract(
+                            dataQueryResult,
+                            operationTypes,
+                            ydbContext.getOperationsConfig().getFailOnTruncatedResult()), nextState);
                 });
     }
 
@@ -104,7 +113,7 @@ public final class InsideTransactionState extends AbstractConnectionState implem
     public Mono<OutsideTransactionState> commitTransaction() {
         return Mono.fromFuture(session.commitTransaction(
                         id,
-                        withStatementTimeout(new CommitTxSettings())))
+                        withDeadlineTimeout(new CommitTxSettings())))
                 .flatMap(ResultExtractor::extract)
                 .doOnSuccess(unused -> session.close())
                 .then(Mono.just(new OutsideTransactionState(ydbContext, ydbTxSettings, statementTimeout)));
@@ -114,7 +123,7 @@ public final class InsideTransactionState extends AbstractConnectionState implem
     public Mono<OutsideTransactionState> rollbackTransaction() {
         return Mono.fromFuture(session.rollbackTransaction(
                         id,
-                        withStatementTimeout(new RollbackTxSettings())))
+                        withDeadlineTimeout(new RollbackTxSettings())))
                 .flatMap(ResultExtractor::extract)
                 .doOnSuccess(unused -> session.close())
                 .then(Mono.just(new OutsideTransactionState(ydbContext, ydbTxSettings, statementTimeout)));
@@ -135,7 +144,7 @@ public final class InsideTransactionState extends AbstractConnectionState implem
         return switch (depth) {
             case LOCAL -> Mono.just(true);
             case REMOTE ->
-                    Mono.fromFuture(session.keepAlive(withStatementTimeout(new KeepAliveSessionSettings())))
+                    Mono.fromFuture(session.keepAlive(withDeadlineTimeout(new KeepAliveSessionSettings())))
                             .flatMap(stateResult -> ResultExtractor.extract(stateResult)
                                     .map(state -> Session.State.READY == state));
         };

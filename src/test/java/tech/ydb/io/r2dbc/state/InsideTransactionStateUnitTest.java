@@ -29,6 +29,7 @@ import tech.ydb.core.Status;
 import tech.ydb.core.StatusCode;
 import tech.ydb.core.UnexpectedResultException;
 import tech.ydb.io.r2dbc.YdbContext;
+import tech.ydb.io.r2dbc.OperationsConfig;
 import tech.ydb.io.r2dbc.settings.YdbTxSettings;
 import tech.ydb.io.r2dbc.query.OperationType;
 import tech.ydb.io.r2dbc.result.YdbResult;
@@ -65,6 +66,8 @@ public class InsideTransactionStateUnitTest {
                 )
         ));
         YdbContext ydbContext = Mockito.mock(YdbContext.class);
+        Mockito.when(ydbContext.getOperationsConfig())
+                .thenReturn(OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
         Params params = Mockito.mock(Params.class);
 
@@ -102,6 +105,8 @@ public class InsideTransactionStateUnitTest {
                 )
         ));
         YdbContext ydbContext = Mockito.mock(YdbContext.class);
+        Mockito.when(ydbContext.getOperationsConfig())
+                .thenReturn(OperationsConfig.defaultConfig());
         YdbTxSettings ydbTxSettings = Mockito.mock(YdbTxSettings.class);
         Params params = Mockito.mock(Params.class);
 

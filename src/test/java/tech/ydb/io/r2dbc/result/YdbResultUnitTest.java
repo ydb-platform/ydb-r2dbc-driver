@@ -21,6 +21,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import reactor.test.StepVerifier;
 import reactor.test.StepVerifierOptions;
+import tech.ydb.core.UnexpectedResultException;
 import tech.ydb.table.result.ResultSetReader;
 import tech.ydb.table.result.ValueReader;
 import tech.ydb.table.values.PrimitiveType;
@@ -35,8 +36,7 @@ public class YdbResultUnitTest {
     public void createTest() {
         ResultSetReader resultSetReader = Mockito.mock(ResultSetReader.class);
         Mockito.when(resultSetReader.getRowCount()).thenReturn(1);
-
-        new YdbResult(resultSetReader);
+        new YdbResult(resultSetReader, false);
 
         Mockito.verify(resultSetReader, Mockito.never()).getColumn(ArgumentMatchers.any());
     }
@@ -46,7 +46,7 @@ public class YdbResultUnitTest {
         ResultSetReader resultSetReader = Mockito.mock(ResultSetReader.class);
         Mockito.when(resultSetReader.getRowCount()).thenReturn(1);
 
-        YdbResult ydbResult = new YdbResult(resultSetReader);
+        YdbResult ydbResult = new YdbResult(resultSetReader, false);
         ydbResult.getRowsUpdated()
                 .as(StepVerifier::create)
                 .expectNext(-1L)
@@ -69,11 +69,23 @@ public class YdbResultUnitTest {
         Mockito.when(resultSetReader.getColumn(0)).thenReturn(valueReader);
         Mockito.when(resultSetReader.next()).thenReturn(true).thenReturn(false);
 
-        YdbResult ydbResult = new YdbResult(resultSetReader);
+        YdbResult ydbResult = new YdbResult(resultSetReader,false);
         ydbResult.map((row, rowMetadata) -> row.get("test", Integer.class))
                 .as(StepVerifier::create)
                 .expectNext(123)
                 .verifyComplete();
+    }
+
+    @Test
+    public void getTruncatedTest() {
+        ResultSetReader resultSetReader = Mockito.mock(ResultSetReader.class);
+        Mockito.when(resultSetReader.next()).thenReturn(true).thenReturn(false);
+        Mockito.when(resultSetReader.isTruncated()).thenReturn(true);
+
+        YdbResult ydbResult = new YdbResult(resultSetReader,true);
+        ydbResult.map((row, rowMetadata) -> row.get("test", Integer.class))
+                .as(StepVerifier::create)
+                .verifyError(UnexpectedResultException.class);
     }
 
 
@@ -103,7 +115,7 @@ public class YdbResultUnitTest {
                 .thenReturn(true)
                 .thenReturn(false);
 
-        YdbResult ydbResult = new YdbResult(resultSetReader);
+        YdbResult ydbResult = new YdbResult(resultSetReader, false);
         ydbResult.map((row, rowMetadata) -> row.get("test", Integer.class))
                 .as(flux -> StepVerifier.create(flux, StepVerifierOptions.create().initialRequest(0)
                         .checkUnderRequesting(true)))
