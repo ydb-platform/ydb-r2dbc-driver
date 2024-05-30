@@ -168,7 +168,7 @@ public class YdbContext {
         return defaultYdbTxSettings;
     }
 
-    public YdbQuery findOrParseYdbQuery(String sql) {
+    public YdbQuery fetchYdbQuery(String sql) {
         if (queriesCache == null) {
             return YdbSqlParser.parse(sql);
         }

@@ -116,7 +116,7 @@ public class YdbConnection implements Connection {
 
     @Override
     public YdbStatement createStatement(String sql) {
-        return createStatement(ydbContext.findOrParseYdbQuery(sql));
+        return createStatement(ydbContext.fetchYdbQuery(sql));
     }
 
     YdbStatement createStatement(YdbQuery query) {

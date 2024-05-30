@@ -44,8 +44,8 @@ public class YdbContextUnitTest {
                             .build()))
             );
 
-            ydbContext.findOrParseYdbQuery("test");
-            ydbContext.findOrParseYdbQuery("test");
+            ydbContext.fetchYdbQuery("test");
+            ydbContext.fetchYdbQuery("test");
 
             parser.verify(() -> YdbSqlParser.parse("test"));
         }
@@ -64,8 +64,8 @@ public class YdbContextUnitTest {
                             .build()))
             );
 
-            ydbContext.findOrParseYdbQuery("test");
-            ydbContext.findOrParseYdbQuery("test");
+            ydbContext.fetchYdbQuery("test");
+            ydbContext.fetchYdbQuery("test");
 
             parser.verify(() -> YdbSqlParser.parse("test"), Mockito.times(2));
         }
@@ -88,10 +88,10 @@ public class YdbContextUnitTest {
                             .build()))
             );
 
-            ydbContext.findOrParseYdbQuery("test");
-            ydbContext.findOrParseYdbQuery("test");
-            ydbContext.findOrParseYdbQuery("test2");
-            ydbContext.findOrParseYdbQuery("test2");
+            ydbContext.fetchYdbQuery("test");
+            ydbContext.fetchYdbQuery("test");
+            ydbContext.fetchYdbQuery("test2");
+            ydbContext.fetchYdbQuery("test2");
 
             parser.verify(() -> YdbSqlParser.parse("test"), Mockito.times(1));
             parser.verify(() -> YdbSqlParser.parse("test"), Mockito.times(1));
