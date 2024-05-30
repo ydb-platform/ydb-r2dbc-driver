@@ -17,7 +17,6 @@
 package tech.ydb.io.r2dbc;
 
 import com.google.common.annotations.VisibleForTesting;
-import io.r2dbc.spi.Batch;
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.IsolationLevel;
 import io.r2dbc.spi.TransactionDefinition;
@@ -106,8 +105,8 @@ public class YdbConnection implements Connection {
     }
 
     @Override
-    public Batch createBatch() {
-        throw new UnsupportedOperationException("YDB R2DBC driver is unsupported batch queries");
+    public YdbBatch createBatch() {
+        return new YdbBatch(this, ydbContext);
     }
 
     @Override
@@ -117,8 +116,10 @@ public class YdbConnection implements Connection {
 
     @Override
     public YdbStatement createStatement(String sql) {
-        YdbQuery query = ydbContext.findOrParseYdbQuery(sql);
+        return createStatement(ydbContext.findOrParseYdbQuery(sql));
+    }
 
+    YdbStatement createStatement(YdbQuery query) {
         return switch (query.type()) {
             case DML -> new YdbDMLStatement(query, this);
             case DDL -> new YdbDDLStatement(query, this);

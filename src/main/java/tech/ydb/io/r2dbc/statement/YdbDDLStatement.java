@@ -28,8 +28,8 @@ import tech.ydb.io.r2dbc.statement.binding.Binding;
 public class YdbDDLStatement extends YdbStatement {
     private static final String NOT_SUPPORTED_MESSAGE = "Operation not supported for YdbDDLStatement";
 
-    public YdbDDLStatement(YdbQuery query, YdbConnection queryExecutor) {
-        super(query, queryExecutor);
+    public YdbDDLStatement(YdbQuery query, YdbConnection connection) {
+        super(query, connection);
     }
 
     @Override
