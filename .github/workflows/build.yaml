@@ -3,7 +3,7 @@ name: Build YDB R2DBC Driver
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
 
 env:
