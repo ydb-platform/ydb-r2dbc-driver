@@ -67,7 +67,6 @@ public class YdbResultUnitTest {
         Mockito.when(resultSetReader.getColumnName(0)).thenReturn("test");
         Mockito.when(resultSetReader.getColumnType(0)).thenReturn(PrimitiveType.Int32);
         Mockito.when(resultSetReader.getColumn(0)).thenReturn(valueReader);
-        Mockito.when(resultSetReader.next()).thenReturn(true).thenReturn(false);
 
         YdbResult ydbResult = new YdbResult(resultSetReader,false);
         ydbResult.map((row, rowMetadata) -> row.get("test", Integer.class))
@@ -79,7 +78,7 @@ public class YdbResultUnitTest {
     @Test
     public void getTruncatedTest() {
         ResultSetReader resultSetReader = Mockito.mock(ResultSetReader.class);
-        Mockito.when(resultSetReader.next()).thenReturn(true).thenReturn(false);
+        Mockito.when(resultSetReader.getRowCount()).thenReturn(1);
         Mockito.when(resultSetReader.isTruncated()).thenReturn(true);
 
         YdbResult ydbResult = new YdbResult(resultSetReader,true);
@@ -110,10 +109,6 @@ public class YdbResultUnitTest {
         Mockito.when(valueReader2.getValue()).thenReturn(value2);
 
         Mockito.when(resultSetReader.getColumn(0)).thenReturn(valueReader).thenReturn(valueReader2);
-        Mockito.when(resultSetReader.next())
-                .thenReturn(true)
-                .thenReturn(true)
-                .thenReturn(false);
 
         YdbResult ydbResult = new YdbResult(resultSetReader, false);
         ydbResult.map((row, rowMetadata) -> row.get("test", Integer.class))

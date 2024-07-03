@@ -54,10 +54,11 @@ public class YdbResult implements Result {
         this.segments = Flux.generate(
                 YdbRowMetadataState::new,
                 (state, sink) -> {
-                    if (!resultSetReader.next()) {
+                    if (state.getIndex() >= resultSetReader.getRowCount()) {
                         sink.complete();
                         return state;
                     }
+                    resultSetReader.setRowIndex(state.getIndex());
                     if (failOnTruncated && resultSetReader.isTruncated()) {
                         sink.error(new UnexpectedResultException("Result is truncated", Status.SUCCESS));
                         return state;
@@ -72,7 +73,7 @@ public class YdbResult implements Result {
                     }
 
                     sink.next(new RowSegment(new YdbRow(currentState.getYdbRowMetadata(), values)));
-                    return currentState;
+                    return currentState.next();
                 });
     }
 
@@ -116,13 +117,20 @@ public class YdbResult implements Result {
 
     private static class YdbRowMetadataState {
         private final YdbRowMetadata ydbRowMetadata;
+        private final int index;
 
         public YdbRowMetadataState() {
             this.ydbRowMetadata = null;
+            this.index = 0;
         }
 
         public YdbRowMetadataState(YdbRowMetadata ydbRowMetadata) {
+            this(ydbRowMetadata, 0);
+        }
+
+        public YdbRowMetadataState(YdbRowMetadata ydbRowMetadata, int index) {
             this.ydbRowMetadata = ydbRowMetadata;
+            this.index = index;
         }
 
         public boolean isNotInitialized() {
@@ -135,6 +143,18 @@ public class YdbResult implements Result {
             }
 
             return ydbRowMetadata;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public YdbRowMetadataState next() {
+            if (ydbRowMetadata == null) {
+                throw new IllegalStateException("State in not initialized");
+            }
+
+            return new YdbRowMetadataState(ydbRowMetadata, index + 1);
         }
     }
 
